@@ -1,0 +1,255 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                Int           @id @default(autoincrement())
+  username          String        @unique
+  password          String    
+  name              String
+  role              Role
+  studentId         String?       // Data khusus student
+  points            Int? @default(0)
+  totalCourses      Int? @default(0)
+  badges            Int? @default(0)
+  instructorId      String?       // Data khusus instructor
+  instructorCourses Int?
+  image             String?       @default("")
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relasi
+  enrolledCourses   UserCourse[]
+  chapterProgress   UserChapter[]
+  userBadges        UserBadge[]
+  userTrades        UserTrade[]
+
+  @@map("users")
+}
+
+enum Role {
+  STUDENT
+  INSTRUCTOR
+  ADMIN
+}
+
+model Course {
+  id          Int           @id @default(autoincrement())
+  code        String
+  name        String
+  description String        @db.Text
+  image       String        @default("")
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relasi
+  chapters    Chapter[]
+  enrollments UserCourse[]
+  badges      Badge[]
+
+  @@map("courses")
+}
+
+model UserCourse {
+  id              Int       @id @default(autoincrement())
+  userId          Int
+  courseId        Int
+  progress        Int       @default(0)
+  currentChapter  Int       @default(1)
+  isCompleted     Boolean   @default(false)
+  timeStarted     DateTime  @default(now()) 
+  timeFinished    DateTime  @default(now())
+  enrolledAt      DateTime  @default(now())
+  
+  // Relasi
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course        Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+  @@map("user_courses")
+}
+
+model Chapter {
+  id              Int       @id @default(autoincrement())
+  name            String
+  description     String
+  level           Int
+  courseId        Int
+  isCheckpoint    Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relasi
+  course          Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  materials       Material[]
+  assessments     Assessment[]
+  assignments     Assignment[]
+  userProgress    UserChapter[]
+  badges          Badge[]
+
+  @@index([courseId])
+  @@map("chapters")
+}
+
+model Material {
+  id          Int       @id @default(autoincrement())
+  chapterId   Int
+  name        String
+  content     String    @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relasi
+  chapter     Chapter   @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@index([chapterId])
+  @@map("materials")
+}
+
+model Assessment {
+  id            Int       @id @default(autoincrement())
+  chapterId     Int
+  instruction   String    @db.Text
+  questions     Json?
+  answers       Json?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relasi
+  chapter       Chapter   @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@index([chapterId])
+  @@map("assessments")
+}
+
+model Assignment {
+  id            Int       @id @default(autoincrement())
+  chapterId     Int
+  instruction   String    @db.Text
+  fileUrl       String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relasi
+  chapter       Chapter   @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@index([chapterId])
+  @@map("assignments")
+}
+
+enum QuestType {
+  MC
+  TF
+}
+
+model UserChapter {
+  id              Int       @id @default(autoincrement())
+  userId          Int
+  chapterId       Int
+  isStarted       Boolean   @default(false)
+  isCompleted     Boolean   @default(false)
+  materialDone    Boolean   @default(false)
+  assessmentDone  Boolean   @default(false)
+  assignmentDone  Boolean   @default(false)
+  assessmentAnswer Json? 
+  assessmentGrade Int       @default(0)
+  submission      String?
+  timeStarted     DateTime  @default(now()) 
+  timeFinished    DateTime  @default(now())
+  assignmentScore     Int     @default(0)
+  assignmentFeedback  String  @default("")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relasi
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chapter         Chapter   @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([chapterId])
+  @@map("user_chapters")
+}
+
+model Badge {
+  id        Int      @id @default(autoincrement())
+  name      String
+  type      BadgeType
+  image     String?
+  courseId  Int
+  chapterId Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relasi
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  chapter   Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  userBadges UserBadge[]
+
+  @@unique([courseId, chapterId, type])
+  @@index([courseId])
+  @@index([chapterId])
+  @@map("badges")
+}
+
+enum BadgeType {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCE
+}
+
+model UserBadge {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  badgeId   Int
+  isPurchased Boolean @default(false)
+  awardedAt DateTime @default(now())
+
+  // Relasi
+  user      User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge     Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([badgeId])
+  @@map("user_badges")
+}
+
+model Trade {
+  id                  Int         @id @default(autoincrement())
+  title               String
+  image               String
+  description         String
+  requiredBadgeType   BadgeType
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  userTrades UserTrade[]
+
+  @@map("trades")
+}
+
+model UserTrade {
+  id                  Int         @id @default(autoincrement())
+  userId              Int
+  tradeId             Int
+  purchasedAt         DateTime @default(now())
+
+  user      User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trade     Trade @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tradeId])
+  @@map("user_trades")
+}
