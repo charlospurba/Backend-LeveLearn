@@ -3,44 +3,45 @@ const prisma = new PrismaClient();
 
 exports.getAllTrades = async () => {
     try {
-        const trades = await prisma.trade.findMany(); 
-        return trades;
+        return await prisma.trade.findMany({
+            orderBy: { id: 'asc' }
+        }); 
     } catch (error) {
         throw new Error(error.message);
     }
 };
 
-exports.getTradeById = async (id) => {
-    try {
-        const trade = await prisma.trade.findUnique({
-            where: {
-                id
-            },
-        });
-        return trade;
-    } catch (error) {
-        throw new Error(`Error retrieving trade with id ${id}`);
-    }
-}
-
 exports.createTrade = async (newData) => {
     try {
-        const newTrade = await prisma.trade.create({
-            data: newData
+        // Cari ID tertinggi untuk menentukan ID berikutnya secara manual
+        const lastTrade = await prisma.trade.findFirst({
+            orderBy: { id: 'desc' },
+            select: { id: true }
         });
-        return newTrade;
+
+        const nextId = lastTrade ? lastTrade.id + 1 : 1;
+        const { id, ...dataToSave } = newData;
+
+        // Gunakan return agar controller menerima objek hasil create
+        return await prisma.trade.create({
+            data: {
+                ...dataToSave,
+                id: nextId
+            }
+        });
     } catch (error) {
-        throw new Error(error.message);
+        throw error; // Lempar error asli agar ditangkap controller
     }
 };
 
 exports.updateTrade = async(id, updateData) => {
     try {
-        const trade = await prisma.trade.update({
+        // Memastikan ID tidak ikut diubah saat proses update
+        const { id: _, ...cleanData } = updateData;
+        return await prisma.trade.update({
             where: { id },      
-            data: updateData,     
+            data: cleanData,     
         });
-        return trade;  
     } catch (error) {
         throw new Error(error.message);  
     }
@@ -48,15 +49,14 @@ exports.updateTrade = async(id, updateData) => {
 
 exports.deleteTrade = async(id) => {
     try {
-        await prisma.trade.delete({
-            where: { id },
-        });
+        // Menghapus data di tabel trades
+        // Tabel user_trades akan ikut terhapus jika onDelete: Cascade aktif di Prisma
+        await prisma.trade.delete({ where: { id } });
         return `Successfully deleted trade with id: ${id}`;
     } catch (error) {
         throw new Error('Error deleting trade: ' + error.message); 
     }
 }
-
 
 // SPECIAL SERVICES
 

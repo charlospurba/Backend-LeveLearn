@@ -23,7 +23,7 @@ require("dotenv").config();
 
 const app = express();
 
-// JSON parsing + rawBody logging
+// --- TETAP MENJAGA RAW BODY DIAGNOSTICS ANDA ---
 app.use(
   express.json({
     verify: (req, res, buf) => {
@@ -32,7 +32,7 @@ app.use(
   })
 );
 
-// request logger
+// Request logger
 app.use((req, res, next) => {
   console.log(
     `[${new Date().toISOString()}] ${req.method} ${req.originalUrl} from ${
@@ -42,19 +42,19 @@ app.use((req, res, next) => {
   next();
 });
 
-// CORS configuration
+// CORS configuration - Dibuat lebih eksplisit agar tidak "Lost Connection"
 app.use(
   cors({
-    origin: true, // mirrors request origin
+    origin: true,
     methods: "GET,POST,PUT,DELETE,PATCH,OPTIONS",
     allowedHeaders: "Content-Type, Authorization",
     credentials: true,
   })
 );
 
-app.options("*", cors()); // IMPORTANT → allows browser to continue after OPTIONS preflight
+app.options("*", cors()); 
 
-// Diagnostics for login request
+// Diagnostics for login request (Tetap ada)
 app.use((req, res, next) => {
   if (req.method === "POST" && req.path === "/api/login") {
     console.log("--- raw request diagnostics ---");
@@ -86,7 +86,7 @@ app.get("/api/ping", (req, res) => {
   res.json({ ok: true, time: new Date().toISOString() });
 });
 
-// Bad JSON → return JSON error instead of HTML
+// Bad JSON handling
 app.use((err, req, res, next) => {
   if (
     err &&
@@ -130,7 +130,5 @@ app.listen(PORT, HOST, () => {
     lanAddrs.forEach((addr) =>
       console.log(`    - On LAN: http://${addr}:${PORT}/api`)
     );
-  } else {
-    console.log("    - On LAN: (no non-internal IPv4 address found)");
   }
 });

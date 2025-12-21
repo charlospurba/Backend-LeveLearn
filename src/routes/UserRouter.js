@@ -20,7 +20,6 @@ router.put('/user/:id', uploadImage, userController.updateUser);
 // Router for delete user by id
 router.delete('/user/:id', userController.deleteUser);
 
-
 // SPECIAL ROUTES
 
 // Get Courses by User
@@ -31,5 +30,12 @@ router.get('/user/:id/badges', userController.getBadgesByUser);
 
 // Get Trades by User
 router.get('/user/:id/trades', userController.getTradesByUser);
+
+// RUTE BARU UNTUK SHOP AVATAR
+// Dipanggil oleh: UserService.savePurchasedAvatarToDb
+router.post('/user/purchase-avatar', userController.purchaseAvatar);
+
+// Dipanggil oleh: UserService.getPurchasedAvatarsFromDb
+router.get('/user/:id/avatars', userController.getOwnedAvatars);
 
 module.exports = router;
