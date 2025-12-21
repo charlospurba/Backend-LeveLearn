@@ -22,7 +22,7 @@ model User {
   totalCourses      Int?          @default(0)
   badges            Int?          @default(0)
   
-  // --- TAMBAHAN FIELD STREAK ---
+  // --- FITUR STREAK & INTERAKSI ---
   streak            Int           @default(0)
   lastInteraction   DateTime?     
   // -----------------------------
@@ -98,12 +98,12 @@ model Chapter {
   updatedAt     DateTime      @updatedAt
 
   // Relasi
-  course       Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  materials    Material[]
-  assessments  Assessment[]
-  assignments  Assignment[]
+  course        Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  materials     Material[]
+  assessments   Assessment[]
+  assignments   Assignment[]
   userProgress UserChapter[]
-  badges       Badge[]
+  badges        Badge[]
 
   @@index([courseId])
   @@map("chapters")
@@ -156,23 +156,23 @@ model Assignment {
 }
 
 model UserChapter {
-  id               Int      @id @default(autoincrement())
-  userId           Int
-  chapterId        Int
-  isStarted        Boolean  @default(false)
-  isCompleted      Boolean  @default(false)
-  materialDone     Boolean  @default(false)
-  assessmentDone   Boolean  @default(false)
-  assignmentDone   Boolean  @default(false)
-  assessmentAnswer Json?
-  assessmentGrade  Int      @default(0)
-  submission       String?
-  timeStarted      DateTime @default(now())
-  timeFinished     DateTime @default(now())
+  id                 Int      @id @default(autoincrement())
+  userId             Int
+  chapterId          Int
+  isStarted          Boolean  @default(false)
+  isCompleted        Boolean  @default(false)
+  materialDone       Boolean  @default(false)
+  assessmentDone     Boolean  @default(false)
+  assignmentDone     Boolean  @default(false)
+  assessmentAnswer   Json?
+  assessmentGrade    Int      @default(0)
+  submission         String?
+  timeStarted        DateTime @default(now())
+  timeFinished       DateTime @default(now())
   assignmentScore     Int      @default(0)
   assignmentFeedback  String   @default("")
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   // Relasi
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -195,8 +195,8 @@ model Badge {
   updatedAt DateTime  @updatedAt
 
   // Relasi
-  course     Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  chapter    Chapter     @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  course      Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  chapter     Chapter     @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   userBadges UserBadge[]
 
   @@unique([courseId, chapterId, type])
@@ -215,7 +215,7 @@ model UserBadge {
   id          Int      @id @default(autoincrement())
   userId      Int
   badgeId     Int
-  isPurchased Boolean  @default(false)
+  isPurchased Boolean  @default(false) // Ditandai true jika sudah ditukar dengan item Trade
   awardedAt   DateTime @default(now())
 
   // Relasi
@@ -227,22 +227,22 @@ model UserBadge {
   @@map("user_badges")
 }
 
-// Model Trade digunakan sebagai Master Data Avatar
+// Model Trade digunakan sebagai Master Data Avatar & Reward
 model Trade {
   id                Int       @id @default(autoincrement())
   title             String
-  image             String    // Path ke file avatar (misal: lib/assets/avatars/avatar1.jpeg)
+  image             String    
   description       String
   requiredBadgeType BadgeType
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
-  userTrades UserTrade[] // Relasi ke catatan kepemilikan user
+  userTrades UserTrade[] 
 
   @@map("trades")
 }
 
-// Model UserTrade mencatat siapa yang sudah membeli avatar apa
+// Model UserTrade mencatat kepemilikan item oleh user
 model UserTrade {
   id          Int      @id @default(autoincrement())
   userId      Int
@@ -253,6 +253,7 @@ model UserTrade {
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   trade Trade @relation(fields: [tradeId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, tradeId]) // Mencegah user memiliki item yang sama dua kali
   @@index([userId])
   @@index([tradeId])
   @@map("user_trades")

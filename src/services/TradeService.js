@@ -11,32 +11,31 @@ exports.getAllTrades = async () => {
     }
 };
 
-exports.createTrade = async (newData) => {
+exports.getTradeById = async (id) => {
     try {
-        // Cari ID tertinggi untuk menentukan ID berikutnya secara manual
-        const lastTrade = await prisma.trade.findFirst({
-            orderBy: { id: 'desc' },
-            select: { id: true }
-        });
-
-        const nextId = lastTrade ? lastTrade.id + 1 : 1;
-        const { id, ...dataToSave } = newData;
-
-        // Gunakan return agar controller menerima objek hasil create
-        return await prisma.trade.create({
-            data: {
-                ...dataToSave,
-                id: nextId
-            }
+        return await prisma.trade.findUnique({
+            where: { id }
         });
     } catch (error) {
-        throw error; // Lempar error asli agar ditangkap controller
+        throw new Error(error.message);
+    }
+};
+
+exports.createTrade = async (newData) => {
+    try {
+        // PERBAIKAN: Jangan tentukan ID secara manual. Biarkan autoincrement.
+        const { id, ...dataToSave } = newData;
+
+        return await prisma.trade.create({
+            data: dataToSave
+        });
+    } catch (error) {
+        throw new Error("Gagal membuat item trade: " + error.message);
     }
 };
 
 exports.updateTrade = async(id, updateData) => {
     try {
-        // Memastikan ID tidak ikut diubah saat proses update
         const { id: _, ...cleanData } = updateData;
         return await prisma.trade.update({
             where: { id },      
@@ -45,20 +44,16 @@ exports.updateTrade = async(id, updateData) => {
     } catch (error) {
         throw new Error(error.message);  
     }
-}
+};
 
 exports.deleteTrade = async(id) => {
     try {
-        // Menghapus data di tabel trades
-        // Tabel user_trades akan ikut terhapus jika onDelete: Cascade aktif di Prisma
         await prisma.trade.delete({ where: { id } });
-        return `Successfully deleted trade with id: ${id}`;
+        return { message: `Trade item with id ${id} successfully deleted` };
     } catch (error) {
         throw new Error('Error deleting trade: ' + error.message); 
     }
-}
-
-// SPECIAL SERVICES
+};
 
 exports.getTradesByCourse = async(courseId) => {
     try {
@@ -71,4 +66,4 @@ exports.getTradesByCourse = async(courseId) => {
     } catch (error) {
         throw new Error(error.message);
     }
-}
+};

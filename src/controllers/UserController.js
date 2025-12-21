@@ -98,17 +98,17 @@ const updateUser = async (req, res) => {
             updateData.password = await bcrypt.hash(updateData.password, 10);
         }
 
-        // Sanitasi tipe data Integer agar Prisma/Database tidak error
+        // --- SANITASI DATA INTEGER ---
         if (updateData.points !== undefined) updateData.points = parseInt(updateData.points);
         if (updateData.totalCourses !== undefined) updateData.totalCourses = parseInt(updateData.totalCourses);
         if (updateData.badges !== undefined) updateData.badges = parseInt(updateData.badges);
         
-        // --- TAMBAHAN UNTUK STREAK ---
+        // --- PENANGANAN STREAK ---
         if (updateData.streak !== undefined) {
             updateData.streak = parseInt(updateData.streak);
         }
         
-        // Konversi string ISO date dari Flutter menjadi object Date JavaScript
+        // Konversi string ISO dari Flutter ke Object Date JavaScript untuk Prisma
         if (updateData.lastInteraction !== undefined) {
             updateData.lastInteraction = updateData.lastInteraction ? new Date(updateData.lastInteraction) : null;
         }
@@ -140,7 +140,7 @@ const deleteUser = async (req, res) => {
     }
 };
 
-/** * SPECIAL CONTROLLERS (Relasi)
+/** * SPECIAL RELATIONAL CONTROLLERS
  */
 
 const getCoursesByUser = async (req, res) => {
@@ -174,12 +174,11 @@ const getTradesByUser = async (req, res) => {
 };
 
 /**
- * GAMIFICATION: Controller untuk Memproses Transaksi Pembelian Avatar
+ * GAMIFIKASI: Controller untuk Memproses Transaksi Pembelian Avatar & Trade
  */
 const purchaseAvatar = async (req, res) => {
     const { user_id, avatar_id } = req.body;
     
-    // Validasi input
     if (!user_id || !avatar_id) {
         return res.status(400).json({ message: "user_id dan avatar_id diperlukan" });
     }
