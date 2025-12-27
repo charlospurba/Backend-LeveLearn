@@ -3,39 +3,39 @@ const express = require('express');
 const userController = require('../controllers/UserController');
 const { uploadImage } = require('../middlewares/FileUpload');
 
+// TAMBAHKAN BARIS INI AGAR ROUTER KENAL DENGAN SERVICE
+const userService = require('../services/UserService'); 
+
 const router = express.Router();
 
-// Route for get all users
+// Route standar
 router.get('/user', userController.getAllUsers);
-
-// Route for get user by id
 router.get('/user/:id', userController.getUserById);
-
-// Router for create user
 router.post('/user', uploadImage, userController.createUser);
-
-// Router for update user by id
 router.put('/user/:id', uploadImage, userController.updateUser);
-
-// Router for delete user by id
 router.delete('/user/:id', userController.deleteUser);
 
 // SPECIAL ROUTES
-
-// Get Courses by User
 router.get('/user/:id/courses', userController.getCoursesByUser);
-
-// Get Badges by User
 router.get('/user/:id/badges', userController.getBadgesByUser);
-
-// Get Trades by User
 router.get('/user/:id/trades', userController.getTradesByUser);
-
-// RUTE BARU UNTUK SHOP AVATAR
-// Dipanggil oleh: UserService.savePurchasedAvatarToDb
 router.post('/user/purchase-avatar', userController.purchaseAvatar);
-
-// Dipanggil oleh: UserService.getPurchasedAvatarsFromDb
 router.get('/user/:id/avatars', userController.getOwnedAvatars);
+
+// CHALLENGE ROUTES
+router.get('/user/:id/challenges', userController.getMyChallenges);
+router.post('/user/claim-challenge', userController.claimChallengeReward);
+
+// 3. Route untuk TRIGGER kemajuan challenge (Login, Materi, Kuis)
+// Sekarang 'userService' di bawah ini tidak akan error lagi karena sudah di-require di atas
+router.post('/user/trigger-challenge', async (req, res) => {
+    const { userId, type } = req.body;
+    try {
+        await userService.updateChallengeProgress(userId, type);
+        res.status(200).json({ message: "Progress updated" });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
 
 module.exports = router;

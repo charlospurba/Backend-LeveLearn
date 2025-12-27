@@ -39,6 +39,8 @@ model User {
   userBadges        UserBadge[]
   userTrades        UserTrade[]   
 
+  userChallenges    UserChallenge[]
+
   @@map("users")
 }
 
@@ -257,4 +259,40 @@ model UserTrade {
   @@index([userId])
   @@index([tradeId])
   @@map("user_trades")
+}
+
+// prisma/schema.prisma
+
+model Challenge {
+  id          Int             @id @default(autoincrement())
+  title       String
+  description String
+  goal        Int
+  rewardPoint Int
+  type        ChallengeType   // Ini merujuk ke enum di bawah
+  createdAt   DateTime        @default(now())
+
+  @@map("challenges")
+}
+
+// WAJIB ADA: Definisi tipe tantangan
+enum ChallengeType {
+  DAILY_LOGIN
+  COMPLETE_CHAPTER
+  FINISH_ASSESSMENT
+}
+
+model UserChallenge {
+  id              Int       @id @default(autoincrement())
+  userId          Int
+  challengeId     Int       
+  currentProgress Int       @default(0)
+  isCompleted     Boolean   @default(false)
+  isClaimed       Boolean   @default(false)
+  updatedAt       DateTime  @updatedAt
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, challengeId])
+  @@map("user_challenges")
 }
