@@ -33,12 +33,8 @@ exports.createUser = async (name, username, password, role, studentId, points, t
     });
 };
 
-// src/services/UserService.js
-
 exports.updateUser = async (id, updateData) => {
     const userId = parseInt(id);
-    
-    // AMBIL DATA USER SAAT INI UNTUK BANDINGKAN TANGGAL
     const currentUser = await prisma.user.findUnique({ where: { id: userId } });
     if (!currentUser) throw new Error("User not found");
 
@@ -55,15 +51,11 @@ exports.updateUser = async (id, updateData) => {
             const diffDays = diffTime ? Math.ceil(diffTime / (1000 * 60 * 60 * 24)) : null;
 
             if (diffDays === 1 || !lastDateNormalized) {
-                // HARI BERIKUTNYA: Streak bertambah
                 updateData.streak = (currentUser.streak || 0) + 1;
             } else if (diffDays > 1) {
-                // LEWAT SEHARI: Streak reset
                 updateData.streak = 1;
             }
             updateData.lastInteraction = now;
-            
-            // TRIGGER CHALLENGE DAILY_LOGIN JIKA STREAK BERTAMBAH
             await this.updateChallengeProgress(userId, 'DAILY_LOGIN');
         }
     }
@@ -80,11 +72,9 @@ exports.deleteUser = async (id) => {
 };
 
 // --- FUNGSI CHALLENGE & POIN ---
-
 exports.updateChallengeProgress = async (userId, type) => {
     try {
         const userIdInt = parseInt(userId);
-        
         const masterChallenges = [
             { id: 101, goal: 1, type: "COMPLETE_CHAPTER" },
             { id: 102, goal: 1, type: "FINISH_ASSESSMENT" },
@@ -92,25 +82,20 @@ exports.updateChallengeProgress = async (userId, type) => {
             { id: 104, goal: 1, type: "DAILY_LOGIN" },
             { id: 105, goal: 2, type: "COMPLETE_CHAPTER" },
             { id: 106, goal: 1, type: "FINISH_ASSESSMENT" },
-            { id: 107, goal: 1, type: "COMPLETE_CHAPTER" },
-            { id: 108, goal: 5, type: "COMPLETE_CHAPTER" },
+            { id: 107, goal: 1, type: "START_COURSE" }, 
+            { id: 108, goal: 5, type: "MATERIAL_INTERACTION" },
             { id: 109, goal: 1, type: "COMPLETE_CHAPTER" },
-            { id: 110, goal: 1, type: "FINISH_ASSESSMENT" },
+            { id: 110, goal: 1, type: "PERFECT_SCORE" }, 
             { id: 111, goal: 1, type: "DAILY_LOGIN" },
             { id: 112, goal: 1, type: "COMPLETE_CHAPTER" }
         ];
 
-        // Ambil tantangan user yang sedang aktif (belum selesai)
         const userChallenges = await prisma.userChallenge.findMany({
-            where: { 
-                userId: userIdInt,
-                isCompleted: false 
-            }
+            where: { userId: userIdInt, isClaimed: false }
         });
 
         for (const userCh of userChallenges) {
             const rule = masterChallenges.find(m => m.id === userCh.challengeId);
-            
             if (rule && rule.type === type) {
                 const newProgress = userCh.currentProgress + 1;
                 const isNowCompleted = newProgress >= rule.goal;
@@ -118,12 +103,12 @@ exports.updateChallengeProgress = async (userId, type) => {
                 await prisma.userChallenge.update({
                     where: { id: userCh.id },
                     data: {
-                        currentProgress: newProgress,
+                        currentProgress: newProgress > rule.goal ? rule.goal : newProgress,
                         isCompleted: isNowCompleted,
                         updatedAt: new Date()
                     }
                 });
-                console.log(`>>> SUCCESS: Challenge ${rule.id} (${type}) user ${userIdInt} updated: ${newProgress}/${rule.goal}`);
+                console.log(`>>> SUCCESS: Challenge ${rule.id} (${type}) updated for user ${userIdInt}`);
             }
         }
     } catch (error) {
@@ -139,12 +124,10 @@ exports.claimReward = async (userId, userChallengeId) => {
 
     return await prisma.$transaction(async (tx) => {
         const uc = await tx.userChallenge.findUnique({ where: { id: parseInt(userChallengeId) } });
-
         if (!uc || !uc.isCompleted) throw new Error("Tantangan belum selesai");
         if (uc.isClaimed) throw new Error("Hadiah sudah diambil");
 
         const rewardValue = rewardsMap[uc.challengeId] || 0;
-
         await tx.userChallenge.update({
             where: { id: uc.id },
             data: { isClaimed: true, updatedAt: new Date() }
@@ -157,7 +140,6 @@ exports.claimReward = async (userId, userChallengeId) => {
     });
 };
 
-// ... (Fungsi Avatar tetap sama)
 exports.addPurchasedAvatar = async (userId, tradeId, price) => {
     return await prisma.$transaction(async (tx) => {
         const user = await tx.user.findUnique({ where: { id: parseInt(userId) } });

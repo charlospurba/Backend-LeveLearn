@@ -12,34 +12,35 @@ datasource db {
 
 // --- MODEL USER ---
 model User {
-  id                Int           @id @default(autoincrement())
-  username          String        @unique
-  password          String
-  name              String
-  role              Role
-  studentId         String?       
-  points            Int?          @default(0)
-  totalCourses      Int?          @default(0)
-  badges            Int?          @default(0)
-  
-  // --- FITUR STREAK & INTERAKSI ---
-  streak            Int           @default(0)
-  lastInteraction   DateTime?     
-  // -----------------------------
+  id           Int     @id @default(autoincrement())
+  username     String  @unique
+  password     String
+  name         String
+  role         Role
+  studentId    String?
+  points       Int?    @default(0)
+  totalCourses Int?    @default(0)
+  badges       Int?    @default(0)
 
-  instructorId      String?       
+  // --- FITUR STREAK & INTERAKSI ---
+  streak          Int                  @default(0)
+  lastInteraction DateTime?
+  // -----------------------------
+  activityLogs    UserActivityLog[]
+  adaptiveProfile UserAdaptiveProfile?
+
+  instructorId      String?
   instructorCourses Int?
-  image             String?       @default("")
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  image             String?  @default("")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   // Relasi
-  enrolledCourses   UserCourse[]
-  chapterProgress   UserChapter[]
-  userBadges        UserBadge[]
-  userTrades        UserTrade[]   
-
-  userChallenges    UserChallenge[]
+  enrolledCourses UserCourse[]
+  chapterProgress UserChapter[]
+  userBadges      UserBadge[]
+  userTrades      UserTrade[]
+  userChallenges  UserChallenge[]
 
   @@map("users")
 }
@@ -52,13 +53,13 @@ enum Role {
 
 // --- MODEL COURSE & CONTENT ---
 model Course {
-  id          Int          @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   code        String
   name        String
-  description String       @db.Text
-  image       String       @default("")
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  description String   @db.Text
+  image       String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relasi
   chapters    Chapter[]
@@ -69,15 +70,15 @@ model Course {
 }
 
 model UserCourse {
-  id              Int       @id @default(autoincrement())
-  userId          Int
-  courseId        Int
-  progress        Int       @default(0)
-  currentChapter  Int       @default(1)
-  isCompleted     Boolean   @default(false)
-  timeStarted     DateTime  @default(now())
-  timeFinished    DateTime  @default(now())
-  enrolledAt      DateTime  @default(now())
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  courseId       Int
+  progress       Int      @default(0)
+  currentChapter Int      @default(1)
+  isCompleted    Boolean  @default(false)
+  timeStarted    DateTime @default(now())
+  timeFinished   DateTime @default(now())
+  enrolledAt     DateTime @default(now())
 
   // Relasi
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -90,22 +91,22 @@ model UserCourse {
 }
 
 model Chapter {
-  id            Int           @id @default(autoincrement())
-  name          String
-  description   String
-  level         Int
-  courseId      Int
-  isCheckpoint  Int           @default(0)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id           Int      @id @default(autoincrement())
+  name         String
+  description  String
+  level        Int
+  courseId     Int
+  isCheckpoint Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Relasi
-  course        Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  materials     Material[]
-  assessments   Assessment[]
-  assignments   Assignment[]
+  course       Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  materials    Material[]
+  assessments  Assessment[]
+  assignments  Assignment[]
   userProgress UserChapter[]
-  badges        Badge[]
+  badges       Badge[]
 
   @@index([courseId])
   @@map("chapters")
@@ -171,8 +172,8 @@ model UserChapter {
   submission         String?
   timeStarted        DateTime @default(now())
   timeFinished       DateTime @default(now())
-  assignmentScore     Int      @default(0)
-  assignmentFeedback  String   @default("")
+  assignmentScore    Int      @default(0)
+  assignmentFeedback String   @default("")
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -197,8 +198,8 @@ model Badge {
   updatedAt DateTime  @updatedAt
 
   // Relasi
-  course      Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  chapter     Chapter     @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  course     Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  chapter    Chapter     @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   userBadges UserBadge[]
 
   @@unique([courseId, chapterId, type])
@@ -233,13 +234,13 @@ model UserBadge {
 model Trade {
   id                Int       @id @default(autoincrement())
   title             String
-  image             String    
+  image             String
   description       String
   requiredBadgeType BadgeType
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
-  userTrades UserTrade[] 
+  userTrades UserTrade[]
 
   @@map("trades")
 }
@@ -264,13 +265,13 @@ model UserTrade {
 // prisma/schema.prisma
 
 model Challenge {
-  id          Int             @id @default(autoincrement())
+  id          Int           @id @default(autoincrement())
   title       String
   description String
   goal        Int
   rewardPoint Int
-  type        ChallengeType   // Ini merujuk ke enum di bawah
-  createdAt   DateTime        @default(now())
+  type        ChallengeType // Ini merujuk ke enum di bawah
+  createdAt   DateTime      @default(now())
 
   @@map("challenges")
 }
@@ -283,16 +284,41 @@ enum ChallengeType {
 }
 
 model UserChallenge {
-  id              Int       @id @default(autoincrement())
+  id              Int      @id @default(autoincrement())
   userId          Int
-  challengeId     Int       
-  currentProgress Int       @default(0)
-  isCompleted     Boolean   @default(false)
-  isClaimed       Boolean   @default(false)
-  updatedAt       DateTime  @updatedAt
+  challengeId     Int
+  currentProgress Int      @default(0)
+  isCompleted     Boolean  @default(false)
+  isClaimed       Boolean  @default(false)
+  updatedAt       DateTime @updatedAt
 
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, challengeId])
   @@map("user_challenges")
+}
+
+model UserActivityLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  type      String // QUIZ_SCORE, COMPLETION, EXPLORATION, SESSION, ACCESS, REWARD, ANOMALY
+  value     Float // Nilai numerik log
+  createdAt DateTime @default(now())
+  metadata  Json?
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("user_activity_logs")
+  @@index([userId])
+}
+
+model UserAdaptiveProfile {
+  id             Int      @id @default(autoincrement())
+  userId         Int      @unique
+  currentCluster String // Achievers, Free Spirits, Players, Disruptors
+  confidence     Float
+  lastUpdated    DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id])
+
+  @@map("user_adaptive_profiles")
+  @@index([userId])
 }

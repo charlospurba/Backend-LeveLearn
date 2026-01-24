@@ -17,6 +17,7 @@ const badgeRoutes = require("./routes/BadgeRouter.js");
 const userBadgeRoutes = require("./routes/UserBadgeRouter.js");
 const tradeRoutes = require("./routes/TradeRouter.js");
 const userTradeRoutes = require("./routes/UserTradeRouter.js");
+const activityRoute = require('./routes/ActivityRoute');
 
 const cors = require("cors");
 require("dotenv").config();
@@ -80,6 +81,7 @@ app.use("/api", badgeRoutes);
 app.use("/api", userBadgeRoutes);
 app.use("/api", tradeRoutes);
 app.use("/api", userTradeRoutes);
+app.use("/api", activityRoute);
 
 // Health check
 app.get("/api/ping", (req, res) => {
