@@ -1,3 +1,4 @@
+// controllers/UserController.js
 const bcrypt = require('bcrypt');
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
@@ -6,7 +7,7 @@ const userService = require("../services/UserService");
 const userCourseService = require("../services/UserCourseService");
 const userBadgeService = require("../services/UserBadgeService");
 const UserTradeService = require("../services/UserTradeService");
-const adaptiveService = require("../services/AdaptiveService"); // IMPORT BARU
+const adaptiveService = require("../services/AdaptiveService");
 
 const masterChallenges = [
     { id: 101, title: "Pejuang Materi", description: "Baca 1 materi hari ini", goal: 1, rewardPoint: 20, type: "COMPLETE_CHAPTER" },
@@ -68,9 +69,9 @@ const updateUser = async (req, res) => {
                 await userService.updateChallengeProgress(id, 'PERFECT_SCORE');
             }
             
-            // OTOMATISASI ML: Prediksi klaster baru setelah kuis selesai
+            // NON-BLOCKING: ML berjalan di background
             adaptiveService.updateAndPredictUserType(id).catch(err => 
-                console.error("ML Update Error:", err.message)
+                console.error("ML Update Error (Background):", err.message)
             );
         }
         res.status(200).json({ message: "Update Successful", user: updatedUser });
@@ -190,7 +191,7 @@ const claimChallengeReward = async (req, res) => {
     try {
         const result = await userService.claimReward(userId, userChallengeId);
         
-        // TRIGGER ADAPTIVE: Klaim reward adalah indikator tipe "Player"
+        // TRIGGER ADAPTIVE (Background)
         adaptiveService.updateAndPredictUserType(userId).catch(err => 
             console.error("ML Claim Prediction Error:", err.message)
         );
@@ -201,13 +202,14 @@ const claimChallengeReward = async (req, res) => {
     }
 };
 
-// Endpoint baru untuk diambil oleh Flutter agar UI berubah
+// ENDPOINT OPTIMIZED: Hanya membaca dari DB (Sangat Cepat)
 const getAdaptiveProfile = async (req, res) => {
     const userId = parseInt(req.params.id);
     try {
         const profile = await prisma.userAdaptiveProfile.findUnique({
             where: { userId: userId }
         });
+        // Jika profile belum ada di DB, beri default tanpa panggil ML
         res.status(200).json(profile || { currentCluster: "Achievers" });
     } catch (error) {
         res.status(500).json({ message: "Error", details: error.message });

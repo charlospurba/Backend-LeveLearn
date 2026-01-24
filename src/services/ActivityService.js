@@ -1,4 +1,3 @@
-// services/ActivityService.js
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
@@ -9,7 +8,7 @@ async recordLog(userId, type, value, metadata = {}) {
         data: {
           userId: parseInt(userId) || 0,
           type: type || "UNKNOWN",
-          value: parseFloat(value) || 0.0, // Pastikan ada fallback 0.0
+          value: parseFloat(value) || 0.0, 
           metadata: metadata,
         },
       });
@@ -24,7 +23,7 @@ async recordLog(userId, type, value, metadata = {}) {
     return await prisma.userActivityLog.findMany({
       where: { userId: parseInt(userId) },
       orderBy: { createdAt: 'desc' },
-      take: 100 // Ambil 100 aktivitas terakhir
+      take: 100 
     });
   }
 }
