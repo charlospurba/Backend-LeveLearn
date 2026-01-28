@@ -25,6 +25,8 @@ router.get('/user/:id/avatars', userController.getOwnedAvatars);
 // CHALLENGE ROUTES
 router.get('/user/:id/challenges', userController.getMyChallenges);
 router.post('/user/claim-challenge', userController.claimChallengeReward);
+// Contoh di UserRouter.js
+router.get("/user/adaptive/:id", userController.getAdaptiveProfile);
 
 // 3. Route untuk TRIGGER kemajuan challenge (Login, Materi, Kuis)
 // Sekarang 'userService' di bawah ini tidak akan error lagi karena sudah di-require di atas

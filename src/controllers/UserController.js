@@ -209,10 +209,19 @@ const getAdaptiveProfile = async (req, res) => {
         const profile = await prisma.userAdaptiveProfile.findUnique({
             where: { userId: userId }
         });
-        // Jika profile belum ada di DB, beri default tanpa panggil ML
-        res.status(200).json(profile || { currentCluster: "Achievers" });
+        
+        // Jika data ada di DB, kirim data tersebut. 
+        // Jika belum ada (user baru), kirim default "Disruptors".
+        if (profile) {
+            return res.status(200).json(profile);
+        } else {
+            return res.status(200).json({ 
+                currentCluster: "Disruptors", 
+                confidence: 1.0 
+            });
+        }
     } catch (error) {
-        res.status(500).json({ message: "Error", details: error.message });
+        res.status(500).json({ message: "Error fetching from database", details: error.message });
     }
 };
 
