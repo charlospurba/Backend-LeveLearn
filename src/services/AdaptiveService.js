@@ -8,35 +8,58 @@ class AdaptiveService {
   async updateAndPredictUserType(userId) {
     try {
       const id = parseInt(userId);
+      const logCount = await prisma.userActivityLog.count({ where: { userId: id } });
 
-      // 1. Ambil Vector fitur terbaru dari database log
+      // Mendapatkan vector fitur [x1, x2, x3, x4] dari aggregator
       const vector = await aggregatorService.getFeatureVector(id);
 
-      // 2. Prediksi ke Python ML Service
+      // STRATEGI COLD START: Jika log < 15, kunci di Disruptors
+      if (logCount < 15) {
+        await this.saveProfile(id, "Disruptors", 1.0, vector);
+        console.log(`[COLD-START] User ${id} locked to Disruptors (Logs: ${logCount})`);
+        return;
+      }
+
+      // Prediksi ML
       const response = await axios.post('http://127.0.0.1:8000/predict', { vector });
       const { cluster, confidence } = response.data;
 
-      // 3. UPDATE DATABASE: Tulis hasil prediksi ke database agar sinkron
-      // Kita turunkan threshold ke 0.5 agar perubahan lebih dinamis saat testing
-      if (confidence > 0.5) {
-        await prisma.userAdaptiveProfile.upsert({
-          where: { userId: id },
-          update: {
-            currentCluster: cluster,
-            confidence: confidence,
-            lastUpdated: new Date()
-          },
-          create: {
-            userId: id,
-            currentCluster: cluster,
-            confidence: confidence
-          }
-        });
-        console.log(`[DB-SYNC] User ${id} updated in database to: ${cluster}`);
+      const currentProfile = await prisma.userAdaptiveProfile.findUnique({ where: { userId: id } });
+
+      // STABILISASI: Hanya ganti klaster jika confidence > 0.85
+      if (confidence > 0.85 || (currentProfile && currentProfile.currentCluster === cluster)) {
+        await this.saveProfile(id, cluster, confidence, vector);
+        console.log(`[ML-SYNC] User ${id} updated to: ${cluster} (${(confidence * 100).toFixed(1)}%)`);
       }
-    } catch (error) {
-      console.error("Gagal sinkronisasi ML ke Database:", error.message);
+    } catch (e) {
+      console.error("Adaptive Service Error:", e.message);
     }
+  }
+
+  // MODIFIKASI: Sekarang menerima vector untuk disimpan ke Prisma Studio
+  async saveProfile(userId, cluster, confidence, vector) {
+    await prisma.userAdaptiveProfile.upsert({
+      where: { userId },
+      update: { 
+        currentCluster: cluster, 
+        confidence, 
+        // Menyimpan angka indeks desimal agar terlihat di database
+        achieverIndex: vector[0],
+        freeSpiritIndex: vector[1],
+        playerIndex: vector[2],
+        disruptorIndex: vector[3],
+        lastUpdated: new Date() 
+      },
+      create: { 
+        userId, 
+        currentCluster: cluster, 
+        confidence,
+        achieverIndex: vector[0],
+        freeSpiritIndex: vector[1],
+        playerIndex: vector[2],
+        disruptorIndex: vector[3]
+      }
+    });
   }
 }
 

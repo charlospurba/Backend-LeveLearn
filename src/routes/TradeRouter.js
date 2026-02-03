@@ -19,4 +19,12 @@ router.put('/trade/:id', tradeController.updateTrade);
 // Router for delete trade by id
 router.delete('/trade/:id', tradeController.deleteTrade);
 
+// TradeRouter.js
+// UBAH INI:
+router.post('/trade/buy', tradeController.buyShopItem);
+
+// DAN TAMBAHKAN ROUTE UNTUK EQUIP & EQUIPPED:
+router.get('/usertrade/equipped/:userId', tradeController.getEquippedFrame);
+router.post('/usertrade/equip', tradeController.equipFrame);
+
 module.exports = router;

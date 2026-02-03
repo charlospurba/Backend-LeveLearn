@@ -231,16 +231,30 @@ model UserBadge {
 }
 
 // Model Trade digunakan sebagai Master Data Avatar & Reward
-model Trade {
-  id                Int       @id @default(autoincrement())
-  title             String
-  image             String
-  description       String
-  requiredBadgeType BadgeType
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+// --- MODEL GAMIFICATION (BADGES & TRADES) ---
 
-  userTrades UserTrade[]
+model Trade {
+  id                Int           @id @default(autoincrement())
+  title             String
+  image             String        // URL Gambar (Bisa foto Reward atau PNG Bingkai Transparan)
+  description       String        @db.Text
+  
+  // Penambahan Kategori untuk integrasi UI yang lebih baik
+  // Contoh nilai: "AVATAR", "REWARD", "FRAME", "BOOSTER"
+  category          String        @default("REWARD") 
+  
+  // Jika null, berarti item Marketplace murni (Shop Tab)
+  // Jika diisi, berarti butuh Badge tertentu (Rewards Tab)
+  requiredBadgeType BadgeType? 
+  
+  // Harga dalam poin untuk sistem ekonomi Players
+  priceInPoints     Int           @default(0) 
+  
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relasi ke tabel kepemilikan user
+  userTrades        UserTrade[]
 
   @@map("trades")
 }
@@ -250,6 +264,10 @@ model UserTrade {
   id          Int      @id @default(autoincrement())
   userId      Int
   tradeId     Int
+  
+  // Menandai apakah item ini sedang dipakai (khusus untuk FRAME atau AVATAR)
+  isEquipped  Boolean  @default(false) 
+  
   purchasedAt DateTime @default(now())
 
   // Relasi
@@ -314,9 +332,18 @@ model UserActivityLog {
 model UserAdaptiveProfile {
   id             Int      @id @default(autoincrement())
   userId         Int      @unique
-  currentCluster String // Achievers, Free Spirits, Players, Disruptors
-  confidence     Float
-  lastUpdated    DateTime @default(now())
+  currentCluster String   // Achievers, Free Spirits, Players, Disruptors
+  confidence     Float    // Tingkat keyakinan model (0.0 - 1.0)
+
+  // --- KOLOM BARU: PEMETAAN INDEKS (0.0 - 1.0) ---
+  // Kolom ini akan terlihat di Prisma Studio sebagai angka desimal
+  achieverIndex   Float   @default(0) // Pemetaan Quiz & Progres
+  freeSpiritIndex Float   @default(0) // Pemetaan Eksplorasi & Durasi
+  playerIndex     Float   @default(0) // Pemetaan Akses & Reward
+  disruptorIndex  Float   @default(0) // Pemetaan Anomali
+  // -----------------------------------------------
+
+  lastUpdated    DateTime @default(now()) @updatedAt
   user           User     @relation(fields: [userId], references: [id])
 
   @@map("user_adaptive_profiles")
