@@ -6,6 +6,7 @@ const aggregatorService = require("./AggregatorService");
 
 class AdaptiveService {
   async updateAndPredictUserType(userId) {
+    // return(0);
     try {
       const id = parseInt(userId);
       const logCount = await prisma.userActivityLog.count({ where: { userId: id } });
