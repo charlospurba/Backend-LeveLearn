@@ -18,6 +18,7 @@ const userBadgeRoutes = require("./routes/UserBadgeRouter.js");
 const tradeRoutes = require("./routes/TradeRouter.js");
 const userTradeRoutes = require("./routes/UserTradeRouter.js");
 const activityRoute = require('./routes/ActivityRoute');
+const certificateRoutes = require("./routes/CertificateRouter");
 
 const cors = require("cors");
 require("dotenv").config();
@@ -83,6 +84,7 @@ app.use("/api", tradeRoutes);
 app.use("/api", userTradeRoutes);
 app.use("/api", activityRoute);
 app.use("/api/assignment", assignmentRoutes);
+app.use("/api/certificate", certificateRoutes);
 
 
 // Health check
