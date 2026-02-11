@@ -167,13 +167,20 @@ model UserChapter {
   materialDone       Boolean  @default(false)
   assessmentDone     Boolean  @default(false)
   assignmentDone     Boolean  @default(false)
+  
   assessmentAnswer   Json?
   assessmentGrade    Int      @default(0)
-  submission         String?
+  
+  // HANYA ADA SATU BARIS SUBMISSION DI SINI
+  submission         String?  // URL terbaru
+  submissionHistory  Json?    // Array riwayat pengiriman
+  
   timeStarted        DateTime @default(now())
   timeFinished       DateTime @default(now())
+  
   assignmentScore    Int      @default(0)
   assignmentFeedback String   @default("")
+  
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 

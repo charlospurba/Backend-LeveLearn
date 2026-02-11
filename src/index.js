@@ -82,6 +82,8 @@ app.use("/api", userBadgeRoutes);
 app.use("/api", tradeRoutes);
 app.use("/api", userTradeRoutes);
 app.use("/api", activityRoute);
+app.use("/api/assignment", assignmentRoutes);
+
 
 // Health check
 app.get("/api/ping", (req, res) => {

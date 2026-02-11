@@ -70,10 +70,32 @@ const deleteAssignment = async (req, res) => {
     }
 };
 
+// AssignmentController.js
+const submitUserAssignment = async (req, res) => {
+    const { statusId, fileUrl } = req.body; // Flutter mengirimkan dua field ini
+    
+    if (!statusId || !fileUrl) {
+        return res.status(400).json({ message: "statusId and fileUrl are required" });
+    }
+
+    try {
+        const updatedStatus = await assignmentService.submitAssignment(statusId, fileUrl);
+        res.status(200).json({ 
+            message: "Assignment submitted successfully", 
+            data: updatedStatus 
+        });
+    } catch (error) {
+        console.error("Backend Error:", error.message);
+        res.status(500).json({ message: "Failed to submit assignment", error: error.message });
+    }
+};
+
+
 module.exports = {
     getAllAssignments,
     getAssignmentById,
     createAssignment,
     updateAssignment,
-    deleteAssignment
+    deleteAssignment,
+    submitUserAssignment
 };

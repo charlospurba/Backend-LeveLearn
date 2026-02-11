@@ -19,4 +19,7 @@ router.put('/assignment/:id', assignmentController.updateAssignment);
 // Router for delete assignment by id
 router.delete('/assignment/:id', assignmentController.deleteAssignment);
 
+// Di file routes backend Anda
+router.post("/submit-file", assignmentController.submitUserAssignment);
+
 module.exports = router;

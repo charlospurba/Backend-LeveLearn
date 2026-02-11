@@ -56,3 +56,48 @@ exports.deleteAssignment = async(id) => {
         throw new Error('Error deleting assignment: ' + error.message); 
     }
 }
+
+exports.submitAssignment = async (statusId, newFileUrl) => {
+    try {
+        // 1. Ambil data saat ini
+        const current = await prisma.userChapter.findUnique({
+            where: { id: statusId },
+            select: { submissionHistory: true }
+        });
+
+        if (!current) throw new Error("Status chapter tidak ditemukan");
+
+        // 2. Pastikan history adalah Array (PENTING)
+        let history = [];
+        
+        if (current.submissionHistory) {
+            // Jika data tersimpan sebagai string JSON di DB (tergantung setup DB)
+            if (typeof current.submissionHistory === 'string') {
+                try {
+                    history = JSON.parse(current.submissionHistory);
+                } catch (e) {
+                    history = []; // Reset jika parse gagal
+                }
+            } else if (Array.isArray(current.submissionHistory)) {
+                history = current.submissionHistory;
+            }
+        }
+
+        // 3. Masukkan data baru ke urutan teratas
+        history.unshift(newFileUrl);
+
+        // 4. Update database
+        return await prisma.userChapter.update({
+            where: { id: statusId },
+            data: {
+                submission: newFileUrl,
+                submissionHistory: history, // Prisma akan otomatis mengonversi ke tipe Json di DB
+                assignmentDone: true,
+                isCompleted: true,
+                timeFinished: new Date(),
+            },
+        });
+    } catch (error) {
+        throw new Error("Gagal memperbarui riwayat tugas: " + error.message);
+    }
+};
