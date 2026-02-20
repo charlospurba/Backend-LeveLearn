@@ -1,7 +1,6 @@
-// controllers/ActivityController.js
 const activityService = require("../services/ActivityService");
 const aggregatorService = require("../services/AggregatorService");
-const adaptiveService = require("../services/AdaptiveService"); // <--- WAJIB TAMBAHKAN INI
+const adaptiveService = require("../services/AdaptiveService"); 
 
 const postLog = async (req, res) => {
     try {

@@ -25,7 +25,6 @@ require("dotenv").config();
 
 const app = express();
 
-// --- TETAP MENJAGA RAW BODY DIAGNOSTICS ANDA ---
 app.use(
   express.json({
     verify: (req, res, buf) => {
@@ -44,7 +43,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// CORS configuration - Dibuat lebih eksplisit agar tidak "Lost Connection"
+// CORS configuration
 app.use(
   cors({
     origin: true,
@@ -106,7 +105,6 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
-// Startup
 const PORT = process.env.PORT || 7000;
 const HOST = process.env.HOST || "0.0.0.0";
 
