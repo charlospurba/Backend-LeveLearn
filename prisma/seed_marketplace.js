@@ -4,8 +4,8 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("Seeding 20 Hardcoded Avatar Frames...");
 
-  await prisma.userTrade.deleteMany({});
-  await prisma.trade.deleteMany({});
+  // await prisma.userTrade.deleteMany({});
+  // await prisma.trade.deleteMany({});
 
 const frameDesigns = [
   { title: "Spark I – Soft Shine", image: "Frame1", price: 500 },
