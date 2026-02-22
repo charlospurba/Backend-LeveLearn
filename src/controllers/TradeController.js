@@ -110,19 +110,34 @@ const getEquippedFrame = async (req, res) => {
 
 const equipFrame = async (req, res) => {
     const { userId, tradeId } = req.body;
+    const uId = parseInt(userId);
+    const tId = parseInt(tradeId);
+
     try {
-        await prisma.$transaction([
-            prisma.userTrade.updateMany({
-                where: { userId: parseInt(userId), trade: { category: "FRAME" } },
+        await prisma.$transaction(async (tx) => {
+            // 1. Matikan semua frame yang aktif untuk user ini
+            await tx.userTrade.updateMany({
+                where: { 
+                    userId: uId, 
+                    trade: { category: "FRAME" } 
+                },
                 data: { isEquipped: false }
-            }),
-            prisma.userTrade.update({
-                where: { userId_tradeId: { userId: parseInt(userId), tradeId: parseInt(tradeId) } },
+            });
+
+            // 2. Aktifkan frame yang dipilih
+            await tx.userTrade.update({
+                where: { 
+                    userId_tradeId: { userId: uId, tradeId: tId } 
+                },
                 data: { isEquipped: true }
-            })
-        ]);
-        res.status(200).json({ success: true, message: "Bingkai berhasil dipasang!" });
+            });
+
+            // CATATAN: Bagian update tx.user dihapus karena kolomnya tidak ada di database Anda
+        });
+
+        res.status(200).json({ success: true, message: "Berhasil dipasang di tabel relasi!" });
     } catch (error) {
+        console.error("Equip Error:", error.message);
         res.status(500).json({ success: false, error: error.message });
     }
 };

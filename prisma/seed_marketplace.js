@@ -4,31 +4,31 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("Seeding 20 Hardcoded Avatar Frames...");
 
-//   await prisma.userTrade.deleteMany({});
-//   await prisma.trade.deleteMany({});
+  await prisma.userTrade.deleteMany({});
+  await prisma.trade.deleteMany({});
 
-  const frameDesigns = [
-    { title: "Elite Gold", image: "DESIGN_GOLD_ELITE", price: 2500 },
-    { title: "Neon Pulse", image: "DESIGN_NEON_CYBER", price: 1800 },
-    { title: "Emerald Nature", image: "DESIGN_NATURE_GREEN", price: 1200 },
-    { title: "Deep Ocean", image: "DESIGN_OCEAN_BLUE", price: 1500 },
-    { title: "Arcane Circle", image: "DESIGN_ARCANE_PURPLE", price: 2200 },
-    { title: "Stellar Cosmos", image: "DESIGN_STELLAR_STARS", price: 2800 },
-    { title: "Stone Forge", image: "DESIGN_STONE_GRAY", price: 1000 },
-    { title: "Quantum Rift", image: "DESIGN_QUANTUM_ORANGE", price: 2000 },
-    { title: "Spectrum Aura", image: "DESIGN_SPECTRUM_RAINBOW", price: 3000 },
-    { title: "Frozen Ice", image: "DESIGN_FROST_WHITE", price: 1600 },
-    { title: "Shadow Stealth", image: "DESIGN_SHADOW_BLACK", price: 1400 },
-    { title: "Crimson Fury", image: "DESIGN_CRIMSON_RED", price: 1900 },
-    { title: "Cyber Glitch", image: "DESIGN_GLITCH_MAGENTA", price: 2100 },
-    { title: "Royal Silver", image: "DESIGN_SILVER_ROYAL", price: 2300 },
-    { title: "Autumn Breeze", image: "DESIGN_AUTUMN_BROWN", price: 1100 },
-    { title: "Electric Bolt", image: "DESIGN_ELECTRIC_YELLOW", price: 1700 },
-    { title: "Toxic Bio", image: "DESIGN_TOXIC_LIME", price: 1300 },
-    { title: "Zen Bamboo", image: "DESIGN_ZEN_BAMBOO", price: 900 },
-    { title: "Midnight Sun", image: "DESIGN_MIDNIGHT_NAVY", price: 2400 },
-    { title: "Lava Core", image: "DESIGN_LAVA_HOT", price: 2600 }
-  ];
+const frameDesigns = [
+  { title: "Spark I – Soft Shine", image: "Frame1", price: 500 },
+  { title: "Spark II – Starflare", image: "Frame2", price: 600 },
+  { title: "Spark III – Golden Gleam", image: "Frame3", price: 700 },
+  { title: "Spark IV – Bright Bloom ", image: "Frame4", price: 800 },
+  { title: "Spark V – Tiny Glow", image: "Frame5", price: 900 },
+  { title: "Journey I – Star Trail", image: "Frame6", price: 1000 },
+  { title: "Journey II – Ember Run", image: "Frame7", price: 1200 },
+  { title: "Journey III – Ripple Path", image: "Frame8", price: 1300 },
+  { title: "Journey IV – Coral Drift", image: "Frame9", price: 1400 },
+  { title: "Journey V – Forest Glow", image: "Frame10", price: 1500 },
+  { title: "Kinetic I – Gilded Sparkle", image: "Frame11", price: 1600 },
+  { title: "Kinetic II – Cyber Stream", image: "Frame12", price: 1700 },
+  { title: "Kinetic III – Gilded Rift", image: "Frame13", price: 1800 },
+  { title: "Kinetic IV – Nebula Drift", image: "Frame14", price: 1900 },
+  { title: "Kinetic V – Lunar Bloom", image: "Frame15", price: 2000 },
+  { title: "Magnitude I – Cobalt Wing", image: "Frame16", price: 2100 },
+  { title: "Magnitude II – Crimson Ember", image: "Frame17", price: 2200 },
+  { title: "Magnitude III – Amethyst Wing", image: "Frame18", price: 2300 },
+  { title: "Magnitude IV – Void Scepter", image: "Frame19", price: 2400 },
+  { title: "Magnitude V – Sovereign Crest", image: "Frame20", price: 2500 }
+];
 
   for (const f of frameDesigns) {
     await prisma.trade.create({
@@ -41,7 +41,7 @@ async function main() {
       }
     });
   }
-  console.log("Berhasil menambahkan 20 bingkai ke database!");
+  console.log("Berhasil menambahkan bingkai ke database!");
 }
 
 main().catch(e => console.error(e)).finally(() => prisma.$disconnect());

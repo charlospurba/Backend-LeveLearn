@@ -13,7 +13,33 @@ exports.getAllUsers = async (role) => {
 };
 
 exports.getUserById = async (id) => {
-    return await prisma.user.findUnique({ where: { id: parseInt(id) } });
+    // 1. Ambil data user beserta relasi userTrades yang sedang dipasang (isEquipped)
+    const user = await prisma.user.findUnique({ 
+        where: { id: parseInt(id) },
+        include: {
+            userTrades: {
+                where: { 
+                    isEquipped: true,
+                    trade: { category: "FRAME" } // Hanya ambil yang kategori FRAME
+                }
+            }
+        }
+    });
+
+    if (!user) return null;
+
+    // 2. "Menyuntikkan" field equippedFrameId secara dinamis
+    // Jika ada bingkai yang aktif di tabel UserTrade, ambil tradeId-nya
+    if (user.userTrades && user.userTrades.length > 0) {
+        user.equippedFrameId = user.userTrades[0].tradeId;
+    } else {
+        user.equippedFrameId = null;
+    }
+
+    // 3. Hapus array userTrades agar response JSON tetap bersih (opsional)
+    delete user.userTrades;
+
+    return user;
 };
 
 exports.createUser = async (name, username, password, role, studentId, points, totalCourses, badges, instructorId, instructorCourses, image) => {
