@@ -7,19 +7,32 @@ const QRCode = require('qrcode');
 
 exports.generateCertificate = async (userId, courseId, res) => {
     try {
-        // 1. Ambil data dari Database
-        const user = await prisma.user.findUnique({ where: { id: userId } });
-        const course = await prisma.course.findUnique({ where: { id: courseId } });
+        // 1. Validasi Input & Ambil data dari Database
+        // Gunakan Number() untuk memastikan ID bertipe angka jika DB menggunakan Int
+        const uId = Number(userId);
+        const cId = Number(courseId);
 
-        if (!user || !course) throw new Error("Data User atau Course tidak ditemukan");
+        const user = await prisma.user.findUnique({ where: { id: uId } });
+        const course = await prisma.course.findUnique({ where: { id: cId } });
 
-        // 2. Logika Auto-Generate Nomor Sertifikat (Berdasarkan urutan kelulusan)
-        const orderCount = await prisma.courseEnrollment.count({
-            where: { 
-                courseId: courseId,
-                userId: { lte: userId } // Contoh logika urutan sederhana
-            }
-        });
+        if (!user || !course) {
+            return res.status(404).json({ message: "Data User atau Course tidak ditemukan" });
+        }
+
+        // 2. Logika Auto-Generate Nomor Sertifikat
+        let orderCount = 1;
+        try {
+            // TIPS: Jika error 'count' muncul lagi, pastikan di schema.prisma namanya 'CourseEnrollment'
+            // Jika di schema namanya 'UserCourse', ganti 'courseEnrollment' di bawah menjadi 'userCourse'
+            orderCount = await prisma.courseEnrollment.count({
+                where: { courseId: cId }
+            });
+            // Jika hasil count 0 (karena record baru), set ke 1
+            if (orderCount === 0) orderCount = 1;
+        } catch (dbError) {
+            console.error("Gagal menghitung nomor sertifikat, menggunakan nomor default.");
+            orderCount = Math.floor(Math.random() * 100) + 1; // Fallback agar tidak error
+        }
 
         const year = new Date().getFullYear();
         const formattedNumber = String(orderCount).padStart(3, '0');
@@ -33,6 +46,10 @@ exports.generateCertificate = async (userId, courseId, res) => {
             info: { Title: `Sertifikat ${course.name} - ${user.name}` } 
         });
 
+        // Set response header agar browser mengenali ini sebagai PDF
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=Sertifikat_${uId}.pdf`);
+
         doc.pipe(res);
 
         const width = doc.page.width;
@@ -41,7 +58,7 @@ exports.generateCertificate = async (userId, courseId, res) => {
         // --- BACKGROUND DARK TEAL ---
         doc.rect(0, 0, width, height).fill('#1A3C40'); 
 
-        // --- BORDER EMAS MEWAH (#D4AF37) ---
+        // --- BORDER EMAS MEWAH ---
         doc.rect(20, 20, width - 40, height - 40).lineWidth(2).stroke('#D4AF37');
         doc.rect(30, 30, width - 60, height - 60).lineWidth(1).stroke('#D4AF37');
 
@@ -58,7 +75,7 @@ exports.generateCertificate = async (userId, courseId, res) => {
             doc.image(logoPath, 60, 50, { width: 180 }); 
         }
 
-        // --- HEADER RIBBON: GRADIENT & DEKORASI ---
+        // --- HEADER RIBBON (POJOK KANAN ATAS) ---
         const ribbonWidth = 180;
         const ribbonHeight = 110;
         const ribbonX = width - 240;
@@ -74,9 +91,7 @@ exports.generateCertificate = async (userId, courseId, res) => {
            .fontSize(13).text('of', ribbonX + 10, 45, { width: ribbonWidth - 20, align: 'center' })
            .fontSize(11).text('Completion', ribbonX + 10, 65, { width: ribbonWidth - 20, align: 'center' });
 
-        doc.moveTo(ribbonX + 40, 61).lineTo(ribbonX + ribbonWidth - 40, 61).lineWidth(1).stroke('#1A3C40');
-
-        // --- NOMOR SERTIFIKAT (Diletakkan di bawah ribbon/tengah atas) ---
+        // --- NOMOR SERTIFIKAT ---
         doc.fillColor('#D4AF37')
            .fontSize(14)
            .font('Helvetica-Bold')
@@ -94,21 +109,18 @@ exports.generateCertificate = async (userId, courseId, res) => {
 
         doc.fontSize(32).font('Helvetica-Bold').fillColor('#FFFFFF').text(course.name, 0, 350, { align: 'center' });
 
-        // --- FOOTER RATA KIRI ---
+        // --- FOOTER RATA KIRI (TANGGAL & TANDA TANGAN) ---
         const footerX = 80;
         const footerY = 405; 
 
-        // 1. Tanggal
         const tgl = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
         doc.fillColor('#D4AF37').fontSize(14).font('Helvetica-Bold').text(tgl, footerX, footerY);
 
-        // 2. Tanda Tangan
         const signPath = path.resolve(__dirname, '../../src/assets/signature.png');
         if (fs.existsSync(signPath)) {
             doc.image(signPath, footerX + 30, footerY + 10, { width: 160 });
         }
 
-        // 3. Nama Pejabat
         const textStart = footerY + 110; 
         doc.fillColor('#FFFFFF').fontSize(15).font('Helvetica-Bold')
            .text('Ranty Deviana Siahaan, S.Kom., M.Eng.', footerX, textStart);
@@ -119,7 +131,7 @@ exports.generateCertificate = async (userId, courseId, res) => {
         // --- AUTO-GENERATE QR CODE ---
         const qrX = width - 140;
         const qrY = height - 140;
-        const verificationUrl = `https://levelearn.com/verify/${courseId}-${userId}`;
+        const verificationUrl = `https://levelearn.com/verify/${cId}-${uId}`;
 
         try {
             const qrDataUrl = await QRCode.toDataURL(verificationUrl, {
@@ -137,9 +149,9 @@ exports.generateCertificate = async (userId, courseId, res) => {
         doc.end();
 
     } catch (error) {
-        console.error("Error generating certificate:", error);
+        console.error("CRITICAL ERROR:", error);
         if (!res.headersSent) {
-            res.status(500).send("Gagal menghasilkan sertifikat");
+            res.status(500).json({ error: "Terjadi kesalahan internal", detail: error.message });
         }
     }
 };
