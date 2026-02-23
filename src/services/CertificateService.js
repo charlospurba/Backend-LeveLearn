@@ -5,6 +5,9 @@ const path = require('path');
 const fs = require('fs');
 const QRCode = require('qrcode');
 
+// IMPORT UserCourseService di bagian atas
+const userCourseService = require('./UserCourseService');
+
 exports.generateCertificate = async (userId, courseId, res) => {
     try {
         // 1. Validasi Input & Ambil data dari Database
@@ -109,7 +112,7 @@ exports.generateCertificate = async (userId, courseId, res) => {
             doc.image(logoPath, 60, 50, { width: 180 }); 
         }
 
-        // --- HEADER RIBBON (UKURAN DIPERBESAR) ---
+        // --- HEADER RIBBON ---
         const ribbonWidth = 220; 
         const ribbonHeight = 135; 
         const ribbonX = width - ribbonWidth - 30; // Menempel pada garis border dalam
@@ -134,7 +137,7 @@ exports.generateCertificate = async (userId, courseId, res) => {
         doc.fillColor('#FFFFFF').fontSize(16).font('Helvetica').text('Diberikan kepada', 0, 180, { align: 'center' });
 
         // Nama Diperbesar
-        doc.fontSize(54).font('Times-BoldItalic').fillColor('#D4AF37')
+        doc.fontSize(48).font('Times-BoldItalic').fillColor('#D4AF37')
            .text(user.name.toUpperCase(), 0, 215, { align: 'center' });
 
         // Garis Pembatas Dipertebal sedikit
@@ -146,7 +149,7 @@ exports.generateCertificate = async (userId, courseId, res) => {
         doc.fontSize(36).font('Helvetica-Bold').fillColor('#FFFFFF').text(course.name, 0, 340, { align: 'center' });
 
         // --- MENAMPILKAN SCORE ---
-        const scoreY = 405; 
+        const scoreY = 390; // Dinaikkan sedikit dari 405 agar aman dari tanggal
         doc.fillColor('#F9E498').fontSize(16).font('Helvetica-Bold')
            .text(`Final Grade: ${finalScore}`, 0, scoreY, { align: 'center' });
         
@@ -155,7 +158,7 @@ exports.generateCertificate = async (userId, courseId, res) => {
 
         // --- FOOTER RATA KIRI (TANGGAL & TANDA TANGAN) ---
         const footerX = 80;
-        const footerY = 440; // Diturunkan agar proporsional dengan layout baru
+        const footerY = 415; // DINAIKKAN dari 440 ke 415 agar tidak menabrak garis bawah
 
         const tgl = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
         doc.fillColor('#D4AF37').fontSize(14).font('Helvetica-Bold').text(tgl, footerX, footerY);
@@ -166,7 +169,7 @@ exports.generateCertificate = async (userId, courseId, res) => {
             doc.image(signPath, footerX + 20, footerY + 10, { width: 140 });
         }
 
-        const textStart = footerY + 105; 
+        const textStart = footerY + 95; // Jarak teks nama dengan tanda tangan dirapatkan
         doc.fillColor('#FFFFFF').fontSize(15).font('Helvetica-Bold')
            .text('Ranty Deviana Siahaan, S.Kom., M.Eng.', footerX, textStart);
         
@@ -175,7 +178,7 @@ exports.generateCertificate = async (userId, courseId, res) => {
 
         // --- AUTO-GENERATE QR CODE ---
         const qrX = width - 140;
-        const qrY = height - 145; // Mengikuti margin bawah
+        const qrY = height - 145; 
         const verificationUrl = `https://levelearn.com/verify/${cId}-${uId}`;
 
         try {
