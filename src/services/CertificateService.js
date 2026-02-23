@@ -7,38 +7,40 @@ const QRCode = require('qrcode');
 
 exports.generateCertificate = async (userId, courseId, res) => {
     try {
-        // 1. Validasi Input & Ambil data dari Database
-        // Gunakan Number() untuk memastikan ID bertipe angka jika DB menggunakan Int
+        // 1. Validasi & Casting Input
         const uId = Number(userId);
         const cId = Number(courseId);
 
+        if (isNaN(uId) || isNaN(cId)) {
+            return res.status(400).json({ message: "ID User atau Course harus berupa angka" });
+        }
+
+        // 2. Ambil data dari Database
         const user = await prisma.user.findUnique({ where: { id: uId } });
         const course = await prisma.course.findUnique({ where: { id: cId } });
 
         if (!user || !course) {
-            return res.status(404).json({ message: "Data User atau Course tidak ditemukan" });
+            return res.status(404).json({ message: "Data User atau Course tidak ditemukan di database" });
         }
 
-        // 2. Logika Auto-Generate Nomor Sertifikat
+        // 3. Logika Auto-Generate Nomor Sertifikat
         let orderCount = 1;
         try {
-            // TIPS: Jika error 'count' muncul lagi, pastikan di schema.prisma namanya 'CourseEnrollment'
-            // Jika di schema namanya 'UserCourse', ganti 'courseEnrollment' di bawah menjadi 'userCourse'
+            // Jika model di schema.prisma berbeda (misal: UserCourse), ganti nama di bawah ini
             orderCount = await prisma.courseEnrollment.count({
                 where: { courseId: cId }
             });
-            // Jika hasil count 0 (karena record baru), set ke 1
             if (orderCount === 0) orderCount = 1;
         } catch (dbError) {
-            console.error("Gagal menghitung nomor sertifikat, menggunakan nomor default.");
-            orderCount = Math.floor(Math.random() * 100) + 1; // Fallback agar tidak error
+            console.warn("DB Count error, menggunakan nomor urut default.");
+            orderCount = Math.floor(Math.random() * 900) + 100; 
         }
 
         const year = new Date().getFullYear();
         const formattedNumber = String(orderCount).padStart(3, '0');
         const certificateNo = `NO: ${formattedNumber}/ITD/IF/${year}`;
 
-        // 3. Inisialisasi Dokumen PDF (Landscape A4)
+        // 4. Inisialisasi Dokumen PDF (Landscape A4)
         const doc = new PDFDocument({ 
             layout: 'landscape', 
             size: 'A4', 
@@ -46,30 +48,29 @@ exports.generateCertificate = async (userId, courseId, res) => {
             info: { Title: `Sertifikat ${course.name} - ${user.name}` } 
         });
 
-        // Set response header agar browser mengenali ini sebagai PDF
+        // Set response header agar browser langsung mendownload/menampilkan PDF
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename=Sertifikat_${uId}.pdf`);
+        res.setHeader('Content-Disposition', `attachment; filename=Sertifikat_${user.name.replace(/\s+/g, '_')}.pdf`);
 
         doc.pipe(res);
 
         const width = doc.page.width;
         const height = doc.page.height;
 
-        // --- BACKGROUND DARK TEAL ---
-        doc.rect(0, 0, width, height).fill('#1A3C40'); 
+        // --- STYLING: BACKGROUND & BORDER ---
+        doc.rect(0, 0, width, height).fill('#1A3C40'); // Dark Teal
 
-        // --- BORDER EMAS MEWAH ---
+        // Border Emas
         doc.rect(20, 20, width - 40, height - 40).lineWidth(2).stroke('#D4AF37');
         doc.rect(30, 30, width - 60, height - 60).lineWidth(1).stroke('#D4AF37');
 
         // Ornamen Sudut
-        const offset = 20;
-        const len = 60;
+        const cornerLen = 60;
         doc.lineWidth(2).strokeColor('#D4AF37');
-        doc.moveTo(offset, offset + len).lineTo(offset, offset).lineTo(offset + len, offset).stroke();
-        doc.moveTo(width - offset - len, offset).lineTo(width - offset, offset).lineTo(width - offset, offset + len).stroke();
+        doc.moveTo(20, 20 + cornerLen).lineTo(20, 20).lineTo(20 + cornerLen, 20).stroke();
+        doc.moveTo(width - 20 - cornerLen, 20).lineTo(width - 20, 20).lineTo(width - 20, 20 + cornerLen).stroke();
 
-        // --- HEADER: LOGO LEVELEARN ---
+        // --- ASSETS: LOGO ---
         const logoPath = path.resolve(__dirname, '../../src/assets/LeveLearn.png');
         if (fs.existsSync(logoPath)) {
             doc.image(logoPath, 60, 50, { width: 180 }); 
@@ -91,44 +92,48 @@ exports.generateCertificate = async (userId, courseId, res) => {
            .fontSize(13).text('of', ribbonX + 10, 45, { width: ribbonWidth - 20, align: 'center' })
            .fontSize(11).text('Completion', ribbonX + 10, 65, { width: ribbonWidth - 20, align: 'center' });
 
-        // --- NOMOR SERTIFIKAT ---
-        doc.fillColor('#D4AF37')
-           .fontSize(14)
-           .font('Helvetica-Bold')
-           .text(certificateNo, 0, 145, { align: 'center' });
+        // --- TEXT CONTENT ---
+        // Nomor Sertifikat
+        doc.fillColor('#D4AF37').fontSize(14).font('Helvetica-Bold').text(certificateNo, 0, 145, { align: 'center' });
 
-        // --- KONTEN TENGAH ---
+        // Nama Penerima
         doc.fillColor('#FFFFFF').fontSize(16).font('Helvetica').text('Diberikan kepada', 0, 190, { align: 'center' });
 
-        doc.fontSize(48).font('Times-BoldItalic').fillColor('#D4AF37')
-           .text(user.name.toUpperCase(), 0, 230, { align: 'center' });
+        // Gunakan font kustom jika ada di folder assets/fonts/
+        const customFontPath = path.resolve(__dirname, '../../src/assets/fonts/Cinzel-Bold.ttf');
+        if (fs.existsSync(customFontPath)) {
+            doc.font(customFontPath);
+        } else {
+            doc.font('Times-BoldItalic');
+        }
 
-        doc.moveTo(width / 4, 285).lineTo((width / 4) * 3, 285).lineWidth(1).stroke('#D4AF37');
+        doc.fontSize(48).fillColor('#D4AF37')
+           .text(user.name.toUpperCase(), 0, 230, { align: 'center', characterSpacing: 2 });
 
+        doc.moveTo(width / 4, 290).lineTo((width / 4) * 3, 290).lineWidth(1).stroke('#D4AF37');
+
+        // Keterangan Course
         doc.fillColor('#FFFFFF').fontSize(16).font('Helvetica').text('Atas kelulusannya pada kelas', 0, 310, { align: 'center' });
-
         doc.fontSize(32).font('Helvetica-Bold').fillColor('#FFFFFF').text(course.name, 0, 350, { align: 'center' });
 
-        // --- FOOTER RATA KIRI (TANGGAL & TANDA TANGAN) ---
+        // --- FOOTER (TANDA TANGAN & TANGGAL) ---
         const footerX = 80;
-        const footerY = 405; 
+        const footerY = 410; 
 
         const tgl = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
         doc.fillColor('#D4AF37').fontSize(14).font('Helvetica-Bold').text(tgl, footerX, footerY);
 
         const signPath = path.resolve(__dirname, '../../src/assets/signature.png');
         if (fs.existsSync(signPath)) {
-            doc.image(signPath, footerX + 30, footerY + 10, { width: 160 });
+            doc.image(signPath, footerX + 30, footerY + 5, { width: 150 });
         }
 
-        const textStart = footerY + 110; 
         doc.fillColor('#FFFFFF').fontSize(15).font('Helvetica-Bold')
-           .text('Ranty Deviana Siahaan, S.Kom., M.Eng.', footerX, textStart);
-        
+           .text('Ranty Deviana Siahaan, S.Kom., M.Eng.', footerX, footerY + 100);
         doc.fontSize(11).font('Helvetica').fillColor('#CCCCCC')
-           .text('Chief Academic Officer LeveLearn', footerX, textStart + 18);
+           .text('Chief Academic Officer LeveLearn', footerX, footerY + 118);
 
-        // --- AUTO-GENERATE QR CODE ---
+        // --- QR CODE VERIFIKASI ---
         const qrX = width - 140;
         const qrY = height - 140;
         const verificationUrl = `https://levelearn.com/verify/${cId}-${uId}`;
@@ -146,12 +151,17 @@ exports.generateCertificate = async (userId, courseId, res) => {
         doc.fillColor('#FFFFFF').fontSize(7).font('Helvetica-Bold')
            .text('VERIFIKASI DIGITAL', qrX - 15, qrY + 75, { width: 100, align: 'center' });
 
+        // SELESAIKAN DOKUMEN
         doc.end();
 
     } catch (error) {
-        console.error("CRITICAL ERROR:", error);
+        console.error("CRITICAL ERROR GENERATING PDF:", error);
+        // Pastikan tidak mengirim respons dua kali
         if (!res.headersSent) {
-            res.status(500).json({ error: "Terjadi kesalahan internal", detail: error.message });
+            res.status(500).json({ 
+                error: "Gagal memproses sertifikat", 
+                detail: error.message 
+            });
         }
     }
 };
