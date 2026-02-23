@@ -8,7 +8,6 @@ const QRCode = require('qrcode');
 exports.generateCertificate = async (userId, courseId, res) => {
     try {
         // 1. Validasi Input & Ambil data dari Database
-        // Gunakan Number() untuk memastikan ID bertipe angka jika DB menggunakan Int
         const uId = Number(userId);
         const cId = Number(courseId);
 
@@ -19,26 +18,62 @@ exports.generateCertificate = async (userId, courseId, res) => {
             return res.status(404).json({ message: "Data User atau Course tidak ditemukan" });
         }
 
-        // 2. Logika Auto-Generate Nomor Sertifikat
+        // ==========================================
+        // 2. LOGIKA PERHITUNGAN SCORE
+        // ==========================================
+        
+        // Hitung total chapter di course ini
+        const totalChaptersInCourse = await prisma.chapter.count({
+            where: { courseId: cId }
+        });
+
+        // Ambil semua progress user di chapter-chapter course ini
+        const userChapters = await prisma.userChapter.findMany({
+            where: {
+                userId: uId,
+                chapter: {
+                    courseId: cId
+                }
+            }
+        });
+
+        let totalAssessment = 0;
+        let totalAssignment = 0;
+
+        userChapters.forEach(uc => {
+            totalAssessment += (uc.assessmentGrade || 0);
+            totalAssignment += (uc.assignmentScore || 0);
+        });
+
+        // Hindari pembagian dengan 0 jika course belum punya chapter
+        const chapterCount = totalChaptersInCourse > 0 ? totalChaptersInCourse : 1;
+
+        // Hitung rata-rata dan final score (dibulatkan agar rapi)
+        const avgAssessment = Math.round(totalAssessment / chapterCount);
+        const avgAssignment = Math.round(totalAssignment / chapterCount);
+        const finalScore = Math.round((avgAssessment + avgAssignment) / 2);
+
+        // ==========================================
+        // 3. LOGIKA AUTO-GENERATE NOMOR SERTIFIKAT
+        // ==========================================
         let orderCount = 1;
         try {
-            // TIPS: Jika error 'count' muncul lagi, pastikan di schema.prisma namanya 'CourseEnrollment'
-            // Jika di schema namanya 'UserCourse', ganti 'courseEnrollment' di bawah menjadi 'userCourse'
-            orderCount = await prisma.courseEnrollment.count({
+            orderCount = await prisma.userCourse.count({
                 where: { courseId: cId }
             });
-            // Jika hasil count 0 (karena record baru), set ke 1
             if (orderCount === 0) orderCount = 1;
         } catch (dbError) {
             console.error("Gagal menghitung nomor sertifikat, menggunakan nomor default.");
-            orderCount = Math.floor(Math.random() * 100) + 1; // Fallback agar tidak error
+            orderCount = Math.floor(Math.random() * 100) + 1; 
         }
 
         const year = new Date().getFullYear();
         const formattedNumber = String(orderCount).padStart(3, '0');
         const certificateNo = `NO: ${formattedNumber}/ITD/IF/${year}`;
 
-        // 3. Inisialisasi Dokumen PDF (Landscape A4)
+        // ==========================================
+        // 4. INISIALISASI DOKUMEN PDF
+        // ==========================================
         const doc = new PDFDocument({ 
             layout: 'landscape', 
             size: 'A4', 
@@ -46,7 +81,6 @@ exports.generateCertificate = async (userId, courseId, res) => {
             info: { Title: `Sertifikat ${course.name} - ${user.name}` } 
         });
 
-        // Set response header agar browser mengenali ini sebagai PDF
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename=Sertifikat_${uId}.pdf`);
 
@@ -109,9 +143,18 @@ exports.generateCertificate = async (userId, courseId, res) => {
 
         doc.fontSize(32).font('Helvetica-Bold').fillColor('#FFFFFF').text(course.name, 0, 350, { align: 'center' });
 
+        // --- MENAMPILKAN SCORE ---
+        const scoreY = 395;
+        doc.fillColor('#F9E498').fontSize(14).font('Helvetica-Bold')
+           .text(`Final Grade: ${finalScore}`, 0, scoreY, { align: 'center' });
+        
+        doc.fillColor('#CCCCCC').fontSize(10).font('Helvetica')
+           .text(`Assessment: ${avgAssessment}   |   Assignment: ${avgAssignment}`, 0, scoreY + 20, { align: 'center' });
+
         // --- FOOTER RATA KIRI (TANGGAL & TANDA TANGAN) ---
+        // Y Position disesuaikan (turun sedikit) agar tidak menabrak teks score
         const footerX = 80;
-        const footerY = 405; 
+        const footerY = 430; 
 
         const tgl = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
         doc.fillColor('#D4AF37').fontSize(14).font('Helvetica-Bold').text(tgl, footerX, footerY);
