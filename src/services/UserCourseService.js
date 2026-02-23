@@ -106,10 +106,29 @@ exports.getCoursesByUser = async (userId) => {
       throw new Error(`No course found for user with id ${userId}`);
     }
 
-    return userCourses.map((userCourse) => ({
-      course: userCourse.course,
-      progress: userCourse.progress,
+    // MODIFIKASI: Menambahkan pengecekan status penilaian tugas per kursus
+    const result = await Promise.all(userCourses.map(async (userCourse) => {
+      const ungradedCount = await prisma.userChapter.count({
+        where: {
+          userId: parseInt(userId),
+          chapter: {
+            courseId: userCourse.course.id,
+            assignments: { some: {} } // Hanya menghitung chapter yang memiliki assignment
+          },
+          assignmentScore: 0 // Asumsi nilai 0 berarti instruktur belum memberikan penilaian
+        }
+      });
+
+      return {
+        course: {
+          ...userCourse.course,
+          isAllAssignmentsGraded: ungradedCount === 0 
+        },
+        progress: userCourse.progress,
+      };
     }));
+
+    return result;
   } catch (error) {
     throw new Error(error.message);
   }
