@@ -109,62 +109,64 @@ exports.generateCertificate = async (userId, courseId, res) => {
             doc.image(logoPath, 60, 50, { width: 180 }); 
         }
 
-        // --- HEADER RIBBON (POJOK KANAN ATAS) ---
-        const ribbonWidth = 180;
-        const ribbonHeight = 110;
-        const ribbonX = width - 240;
+        // --- HEADER RIBBON (UKURAN DIPERBESAR) ---
+        const ribbonWidth = 220; 
+        const ribbonHeight = 135; 
+        const ribbonX = width - ribbonWidth - 30; // Menempel pada garis border dalam
 
         const goldGradient = doc.linearGradient(ribbonX, 0, ribbonX + ribbonWidth, 0);
         goldGradient.stop(0, '#D4AF37').stop(0.5, '#F9E498').stop(1, '#B8860B');
 
         doc.rect(ribbonX, 0, ribbonWidth, ribbonHeight).fill(goldGradient);
-        doc.rect(ribbonX, ribbonHeight, ribbonWidth, 4).fill('#8B6508');
+        doc.rect(ribbonX, ribbonHeight, ribbonWidth, 5).fill('#8B6508');
 
+        // Text Ribbon Diperbesar
         doc.fillColor('#1A3C40') 
-           .fontSize(11).font('Helvetica-Bold').text('Certificate', ribbonX + 10, 30, { width: ribbonWidth - 20, align: 'center' })
-           .fontSize(13).text('of', ribbonX + 10, 45, { width: ribbonWidth - 20, align: 'center' })
-           .fontSize(11).text('Completion', ribbonX + 10, 65, { width: ribbonWidth - 20, align: 'center' });
+           .fontSize(16).font('Helvetica-Bold').text('CERTIFICATE', ribbonX, 40, { width: ribbonWidth, align: 'center' })
+           .fontSize(14).font('Helvetica').text('OF', ribbonX, 63, { width: ribbonWidth, align: 'center' })
+           .fontSize(18).font('Helvetica-Bold').text('COMPLETION', ribbonX, 85, { width: ribbonWidth, align: 'center' });
 
         // --- NOMOR SERTIFIKAT ---
         doc.fillColor('#D4AF37')
-           .fontSize(14)
-           .font('Helvetica-Bold')
-           .text(certificateNo, 0, 145, { align: 'center' });
+           .fontSize(14).font('Helvetica-Bold').text(certificateNo, 0, 130, { align: 'center' });
 
         // --- KONTEN TENGAH ---
-        doc.fillColor('#FFFFFF').fontSize(16).font('Helvetica').text('Diberikan kepada', 0, 190, { align: 'center' });
+        doc.fillColor('#FFFFFF').fontSize(16).font('Helvetica').text('Diberikan kepada', 0, 180, { align: 'center' });
 
-        doc.fontSize(48).font('Times-BoldItalic').fillColor('#D4AF37')
-           .text(user.name.toUpperCase(), 0, 230, { align: 'center' });
+        // Nama Diperbesar
+        doc.fontSize(54).font('Times-BoldItalic').fillColor('#D4AF37')
+           .text(user.name.toUpperCase(), 0, 215, { align: 'center' });
 
-        doc.moveTo(width / 4, 285).lineTo((width / 4) * 3, 285).lineWidth(1).stroke('#D4AF37');
+        // Garis Pembatas Dipertebal sedikit
+        doc.moveTo(width / 4, 280).lineTo((width / 4) * 3, 280).lineWidth(1.5).stroke('#D4AF37');
 
         doc.fillColor('#FFFFFF').fontSize(16).font('Helvetica').text('Atas kelulusannya pada kelas', 0, 310, { align: 'center' });
 
-        doc.fontSize(32).font('Helvetica-Bold').fillColor('#FFFFFF').text(course.name, 0, 350, { align: 'center' });
+        // Nama Kelas Diperbesar
+        doc.fontSize(36).font('Helvetica-Bold').fillColor('#FFFFFF').text(course.name, 0, 340, { align: 'center' });
 
         // --- MENAMPILKAN SCORE ---
-        const scoreY = 395;
-        doc.fillColor('#F9E498').fontSize(14).font('Helvetica-Bold')
+        const scoreY = 405; 
+        doc.fillColor('#F9E498').fontSize(16).font('Helvetica-Bold')
            .text(`Final Grade: ${finalScore}`, 0, scoreY, { align: 'center' });
         
-        doc.fillColor('#CCCCCC').fontSize(10).font('Helvetica')
-           .text(`Assessment: ${avgAssessment}   |   Assignment: ${avgAssignment}`, 0, scoreY + 20, { align: 'center' });
+        doc.fillColor('#CCCCCC').fontSize(12).font('Helvetica')
+           .text(`Assessment: ${avgAssessment}   |   Assignment: ${avgAssignment}`, 0, scoreY + 22, { align: 'center' });
 
         // --- FOOTER RATA KIRI (TANGGAL & TANDA TANGAN) ---
-        // Y Position disesuaikan (turun sedikit) agar tidak menabrak teks score
         const footerX = 80;
-        const footerY = 430; 
+        const footerY = 440; // Diturunkan agar proporsional dengan layout baru
 
         const tgl = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
         doc.fillColor('#D4AF37').fontSize(14).font('Helvetica-Bold').text(tgl, footerX, footerY);
 
         const signPath = path.resolve(__dirname, '../../src/assets/signature.png');
         if (fs.existsSync(signPath)) {
-            doc.image(signPath, footerX + 30, footerY + 10, { width: 160 });
+            // Posisi tanda tangan disesuaikan
+            doc.image(signPath, footerX + 20, footerY + 10, { width: 140 });
         }
 
-        const textStart = footerY + 110; 
+        const textStart = footerY + 105; 
         doc.fillColor('#FFFFFF').fontSize(15).font('Helvetica-Bold')
            .text('Ranty Deviana Siahaan, S.Kom., M.Eng.', footerX, textStart);
         
@@ -173,7 +175,7 @@ exports.generateCertificate = async (userId, courseId, res) => {
 
         // --- AUTO-GENERATE QR CODE ---
         const qrX = width - 140;
-        const qrY = height - 140;
+        const qrY = height - 145; // Mengikuti margin bawah
         const verificationUrl = `https://levelearn.com/verify/${cId}-${uId}`;
 
         try {
@@ -186,7 +188,7 @@ exports.generateCertificate = async (userId, courseId, res) => {
             doc.rect(qrX, qrY, 70, 70).lineWidth(1).strokeColor('#D4AF37').stroke();
         }
         
-        doc.fillColor('#FFFFFF').fontSize(7).font('Helvetica-Bold')
+        doc.fillColor('#FFFFFF').fontSize(8).font('Helvetica-Bold')
            .text('VERIFIKASI DIGITAL', qrX - 15, qrY + 75, { width: 100, align: 'center' });
 
         doc.end();
