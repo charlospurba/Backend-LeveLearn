@@ -5,31 +5,27 @@ const badgeService = require('../services/BadgeService');
 
 // Controller untuk mendapatkan daftar course
 const getAllCourses = async (req, res) => {
-    // Ambil userId dari query string (contoh: /api/courses?userId=1)
-    const userId = req.query.userId ? parseInt(req.query.userId) : null;
-
     try {
-        // Kirim userId ke service untuk menghitung isGraded
-        const courses = await courseService.getAllCourses(userId);
+        const courses = await courseService.getAllCourses();
         res.status(200).json(courses); 
     } catch (error) {
         res.status(500).json({ message: "Failed to get course datas", detail: error.message });
         console.log(error.message);
+        
     }
 };
 
 // Controller untuk mendapatkan course by id
 const getCourseById = async(req, res) => {
     const id = parseInt(req.params.id);
-    // Ambil userId dari query string jika ada
-    const userId = req.query.userId ? parseInt(req.query.userId) : null;
 
     try {
-        const course = await courseService.getCourseById(id, userId);
+        const course = await courseService.getCourseById(id);
         res.status(200).json(course);
     } catch (error) {
-        res.status(500).json({ message: `Failed to get course with id ${ id }`, detail: error.message});
-        console.log(error.message);
+        res.status(500).json({ message: `Failed to get course with id ${ id }`})
+        console.log(error.mesage);
+        
     }
 }
 
@@ -42,6 +38,7 @@ const createCourse = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: "Failed to create new course", detail: error.message });
         console.log(error.message);
+        
     }
 };
 
@@ -56,6 +53,7 @@ const updateCourse = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: "Failed to update course", detail: error.message });
         console.log(error.message);
+        
     }
 };
 
@@ -65,9 +63,9 @@ const deleteCourse = async (req, res) => {
 
     try {
         const deleteCourse = await courseService.deleteCourse(id);
-        res.status(200).json({ message: deleteCourse });
+        res.status(200).json(deleteCourse);
     } catch (error) {
-        res.status(500).json({ message: 'Failed to delete course', detail: error.message });
+        res.status(500).json({ message: 'Failed to create course' });
         console.log(error.message);
     }
 };
@@ -91,6 +89,7 @@ const getUsersByCourse = async (req, res) => {
 
     try {
         const users = await userCourseService.getUsersByCourse(courseId);
+        
         res.status(200).json(users);
     } catch (error) {
         res.status(500).json({ message: `Failed to get users in course ${ courseId }`, details: error.message})
