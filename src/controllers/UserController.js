@@ -62,6 +62,12 @@ const updateUser = async (req, res) => {
     const id = parseInt(req.params.id);
     const updateData = { ...req.body };
     try {
+        // === PERBAIKAN: Hashing password jika user mengirimkan password baru ===
+        if (updateData.password) {
+            updateData.password = await bcrypt.hash(updateData.password, 10);
+        }
+        // =======================================================================
+
         const updatedUser = await userService.updateUser(id, updateData);
         if (updateData.points !== undefined) {
             await userService.updateChallengeProgress(id, 'FINISH_ASSESSMENT');

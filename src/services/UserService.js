@@ -86,6 +86,18 @@ exports.updateUser = async (id, updateData) => {
         }
     }
 
+    // === PERBAIKAN: CLEANUP UPDATE DATA ===
+    // Prisma akan error jika kita mencoba meng-update kolom yang tidak ada di schema tabel User.
+    // Oleh karena itu, kita harus membuang atribut titipan dari frontend sebelum masuk ke database.
+    delete updateData.id;                 // ID tidak boleh di-update
+    delete updateData.equippedFrameId;    // BUKAN kolom tabel User (ini disuntikkan dari relasi UserTrade)
+    delete updateData.materialDone;       // Hanya parameter trigger untuk logika streak
+    delete updateData.createdAt;          // Tanggal dibuat tidak boleh diubah
+    
+    // Perbarui tanggal update otomatis ke waktu server saat ini
+    updateData.updatedAt = now;
+    // ======================================
+
     return await prisma.user.update({
         where: { id: userId },
         data: updateData,
