@@ -62,11 +62,14 @@ const updateUser = async (req, res) => {
     const id = parseInt(req.params.id);
     const updateData = { ...req.body };
     try {
-        // === PERBAIKAN: Hashing password jika user mengirimkan password baru ===
-        if (updateData.password) {
+        // === PERBAIKAN: Mencegah Double Hashing ===
+        if (updateData.password && updateData.password.trim() !== "") {
             updateData.password = await bcrypt.hash(updateData.password, 10);
+        } else {
+            // Jika kosong, hapus dari objek agar tidak menimpa password di database
+            delete updateData.password;
         }
-        // =======================================================================
+        // ==========================================
 
         const updatedUser = await userService.updateUser(id, updateData);
         if (updateData.points !== undefined) {

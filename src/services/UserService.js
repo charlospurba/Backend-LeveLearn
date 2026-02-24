@@ -1,11 +1,18 @@
+// services/UserService.js
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
 // --- FUNGSI USER MANAGEMENT ---
 exports.getAllUsers = async (role) => {
     try {
-        return await prisma.user.findMany({
+        const users = await prisma.user.findMany({
             where: role ? { role: role.toUpperCase() } : {},
+        });
+        
+        // Menghapus password dari hasil query
+        return users.map(user => {
+            delete user.password;
+            return user;
         });
     } catch (error) {
         throw new Error("Error retrieving users: " + error.message);
@@ -36,14 +43,15 @@ exports.getUserById = async (id) => {
         user.equippedFrameId = null;
     }
 
-    // 3. Hapus array userTrades agar response JSON tetap bersih (opsional)
+    // 3. Hapus array userTrades dan password agar response JSON tetap bersih dan aman
     delete user.userTrades;
+    delete user.password; // <-- Mencegah Double Hashing
 
     return user;
 };
 
 exports.createUser = async (name, username, password, role, studentId, points, totalCourses, badges, instructorId, instructorCourses, image) => {
-    return await prisma.user.create({
+    const newUser = await prisma.user.create({
         data: {
             name, username, password, role, studentId,
             points: points || 0,
@@ -57,6 +65,9 @@ exports.createUser = async (name, username, password, role, studentId, points, t
             createdAt: new Date(),
         },
     });
+
+    delete newUser.password; // Mencegah password bocor
+    return newUser;
 };
 
 exports.updateUser = async (id, updateData) => {
@@ -87,21 +98,21 @@ exports.updateUser = async (id, updateData) => {
     }
 
     // === PERBAIKAN: CLEANUP UPDATE DATA ===
-    // Prisma akan error jika kita mencoba meng-update kolom yang tidak ada di schema tabel User.
-    // Oleh karena itu, kita harus membuang atribut titipan dari frontend sebelum masuk ke database.
     delete updateData.id;                 // ID tidak boleh di-update
-    delete updateData.equippedFrameId;    // BUKAN kolom tabel User (ini disuntikkan dari relasi UserTrade)
+    delete updateData.equippedFrameId;    // BUKAN kolom tabel User
     delete updateData.materialDone;       // Hanya parameter trigger untuk logika streak
     delete updateData.createdAt;          // Tanggal dibuat tidak boleh diubah
     
-    // Perbarui tanggal update otomatis ke waktu server saat ini
     updateData.updatedAt = now;
     // ======================================
 
-    return await prisma.user.update({
+    const updatedUser = await prisma.user.update({
         where: { id: userId },
         data: updateData,
     });
+
+    delete updatedUser.password; // Mencegah password bocor setelah update
+    return updatedUser;
 };
 
 exports.deleteUser = async (id) => {
@@ -171,10 +182,13 @@ exports.claimReward = async (userId, userChallengeId) => {
             data: { isClaimed: true, updatedAt: new Date() }
         });
 
-        return await tx.user.update({
+        const updatedUser = await tx.user.update({
             where: { id: parseInt(userId) },
             data: { points: { increment: rewardValue } }
         });
+
+        delete updatedUser.password; // Mencegah password bocor
+        return updatedUser;
     });
 };
 
@@ -207,6 +221,7 @@ exports.addPurchasedAvatar = async (userId, tradeId, price) => {
             data: { points: currentPoints - price },
         });
 
+        delete updatedUser.password; // Mencegah password bocor
         return { trade: newTrade, user: updatedUser };
     });
 };
