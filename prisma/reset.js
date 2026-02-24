@@ -2,24 +2,21 @@ const bcrypt = require('bcrypt');
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
-async function resetPassword() {
+async function resetAllPasswords() {
     try {
-        // Tentukan username yang ingin direset dan password barunya
-        const targetUsername = 'emelyy'; // Ubah nama ini jika ingin mereset akun lain
-        const newPassword = 'password123'; // Password baru yang ingin digunakan
-
-        // 1. Buat hash menggunakan bcrypt bawaan Node.js (menghasilkan awalan $2b$)
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        const defaultPassword = 'password'; // Password baru untuk SEMUA user
         
-        console.log(`Hash baru untuk ${targetUsername} berhasil dibuat:`, hashedPassword);
+        // 1. Buat hash satu kali saja untuk dipakai semua user
+        const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+        console.log("Hash baru berhasil dibuat. Memulai proses reset masal...");
 
-        // 2. Update ke database menggunakan Prisma
-        await prisma.user.update({
-            where: { username: targetUsername },
+        // 2. Update SEMUA baris di tabel user menggunakan updateMany
+        const result = await prisma.user.updateMany({
             data: { password: hashedPassword }
         });
 
-        console.log(`✅ Berhasil! Password untuk ${targetUsername} telah di-reset menjadi: ${newPassword}`);
+        console.log(`✅ Selesai! Berhasil mereset password untuk ${result.count} akun.`);
+        console.log(`Semua user sekarang bisa login menggunakan password: ${defaultPassword}`);
     } catch (error) {
         console.error("❌ Gagal mereset password:", error.message);
     } finally {
@@ -28,4 +25,4 @@ async function resetPassword() {
     }
 }
 
-resetPassword();
+resetAllPasswords();
