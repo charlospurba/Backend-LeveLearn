@@ -19,11 +19,12 @@ model User {
   totalCourses Int?    @default(0)
   badges       Int?    @default(0)
   equippedFrameId   Int?
+  posts         Post[]
+  likes           Like[]
+  comments        Comment[]
 
-  // --- FITUR STREAK & INTERAKSI ---
   streak          Int                  @default(0)
   lastInteraction DateTime?
-  // -----------------------------
   activityLogs    UserActivityLog[]
   adaptiveProfile UserAdaptiveProfile?
 
@@ -33,7 +34,6 @@ model User {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  // Relasi
   enrolledCourses UserCourse[]
   chapterProgress UserChapter[]
   userBadges      UserBadge[]
@@ -353,4 +353,39 @@ model UserAdaptiveProfile {
 
   @@map("user_adaptive_profiles")
   @@index([userId])
+}
+
+model Post {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   String?   @db.Text
+  link      String?
+  fileUrl   String?
+  fileName  String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  
+  likes     Like[]
+  comments  Comment[]
+}
+
+model Like {
+  id     Int  @id @default(autoincrement())
+  postId Int
+  userId Int
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId]) // Satu user hanya bisa like satu kali per post
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  postId    Int
+  userId    Int
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
