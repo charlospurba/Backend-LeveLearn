@@ -59,4 +59,38 @@ const handleComment = async (req, res) => {
     }
 };
 
-module.exports = { getPosts, createPost, handleLike, handleComment };
+const updatePost = async (req, res) => {
+    try {
+        const { id } = req.params; // ID Post dari URL
+        const { userId, content } = req.body; // userId dan konten baru dari Body
+
+        const result = await friendsService.updatePost(id, userId, content);
+        
+        if (result.count === 0) {
+            return res.status(403).json({ message: "Bukan pemilik postingan atau post tidak ditemukan" });
+        }
+        
+        res.status(200).json({ message: "Postingan berhasil diperbarui" });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+const deletePost = async (req, res) => {
+    try {
+        const { id } = req.params; // ID Post dari URL
+        const { userId } = req.body; // userId pengirim
+
+        const result = await friendsService.deletePost(id, userId);
+
+        if (result.count === 0) {
+            return res.status(403).json({ message: "Bukan pemilik postingan atau post tidak ditemukan" });
+        }
+
+        res.status(200).json({ message: "Postingan berhasil dihapus" });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = { getPosts, createPost, handleLike, handleComment, updatePost, deletePost };

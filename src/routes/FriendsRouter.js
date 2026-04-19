@@ -22,4 +22,7 @@ router.post('/friends/like', friendsController.handleLike);
 // Route untuk Komentar
 router.post('/friends/comment', friendsController.handleComment);
 
+router.put('/friends/posts/:id', friendsController.updatePost); // Untuk Edit
+router.delete('/friends/posts/:id', friendsController.deletePost);
+
 module.exports = router;

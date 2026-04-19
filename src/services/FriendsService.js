@@ -5,23 +5,20 @@ exports.getAllPosts = async (currentUserId) => {
     return await prisma.post.findMany({
         orderBy: { createdAt: 'desc' },
         include: {
-            user: {
-                select: { 
-                    id: true, name: true, image: true, 
-                    userTrades: { where: { isEquipped: true }, include: { trade: true } }
-                }
+            user: { // Identitas Pembuat Post
+                select: { id: true, name: true, image: true }
             },
-            comments: {
-                include: { user: { select: { name: true, image: true } } },
+            comments: { // Identitas Pemberi Komentar
+                include: { 
+                    user: { select: { name: true, image: true } } // WAJIB ADA
+                },
                 orderBy: { createdAt: 'asc' }
             },
             likes: {
                 where: { userId: parseInt(currentUserId) || 0 },
                 select: { userId: true }
             },
-            _count: {
-                select: { likes: true, comments: true }
-            }
+            _count: { select: { likes: true, comments: true } }
         }
     });
 };
@@ -64,5 +61,28 @@ exports.addComment = async (userId, postId, content) => {
             content
         },
         include: { user: { select: { name: true, image: true } } }
+    });
+};
+
+exports.updatePost = async (postId, userId, content) => {
+    return await prisma.post.updateMany({
+        where: {
+            id: parseInt(postId),
+            userId: parseInt(userId) // Keamanan: Pastikan user adalah pemiliknya
+        },
+        data: {
+            content: content,
+            updatedAt: new Date() // Pastikan field updatedAt diperbarui
+        }
+    });
+};
+
+// Hapus Postingan
+exports.deletePost = async (postId, userId) => {
+    return await prisma.post.deleteMany({
+        where: {
+            id: parseInt(postId),
+            userId: parseInt(userId) // Keamanan: Pastikan user adalah pemiliknya
+        }
     });
 };

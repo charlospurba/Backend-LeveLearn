@@ -241,24 +241,13 @@ model UserBadge {
 model Trade {
   id                Int           @id @default(autoincrement())
   title             String
-  image             String        // URL Gambar (Bisa foto Reward atau PNG Bingkai Transparan)
+  image             String        // URL Supabase
   description       String        @db.Text
-  
-  // Penambahan Kategori untuk integrasi UI yang lebih baik
-  // Contoh nilai: "AVATAR", "REWARD", "FRAME", "BOOSTER"
-  category          String        @default("REWARD") 
-  
-  // Jika null, berarti item Marketplace murni (Shop Tab)
-  // Jika diisi, berarti butuh Badge tertentu (Rewards Tab)
-  requiredBadgeType BadgeType? 
-  
-  // Harga dalam poin untuk sistem ekonomi Players
-  priceInPoints     Int           @default(0) 
-  
+  category          String        @default("REWARD") // "AVATAR", "REWARD", "FRAME"
+  requiredBadgeType BadgeType?    // Hanya untuk REWARD
+  priceInPoints     Int           @default(0)  // Harga dinamis dari Admin
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
-
-  // Relasi ke tabel kepemilikan user
   userTrades        UserTrade[]
 
   @@map("trades")

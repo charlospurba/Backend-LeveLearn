@@ -59,34 +59,41 @@ const deleteTrade = async (req, res) => {
     }
 };
 
-// --- FUNGSI TRANSAKSI PEMBELIAN ---
 const buyShopItem = async (req, res) => {
-    const { userId, tradeId, price } = req.body;
+    const { userId, tradeId } = req.body; // Client hanya kirim ID
+    
     try {
         await prisma.$transaction(async (tx) => {
-            // 1. Validasi saldo user
+            // 1. Ambil data trade dari DB untuk mendapatkan harga asli
+            const trade = await tx.trade.findUnique({ where: { id: parseInt(tradeId) } });
+            if (!trade) throw new Error("Item tidak ditemukan");
+
+            const price = trade.priceInPoints;
             const user = await tx.user.findUnique({ where: { id: parseInt(userId) } });
+
+            // 2. Validasi saldo user
             if (!user || (user.points || 0) < price) {
-                throw new Error("Poin tidak mencukupi atau user tidak ditemukan");
+                throw new Error(`Poin tidak cukup. Butuh ${price} Poin.`);
             }
 
-            // 2. Potong poin user
+            // 3. Potong poin user
             await tx.user.update({
-                where: { id: parseInt(userId) },
-                data: { points: { decrement: parseInt(price) } }
+                where: { id: user.id },
+                data: { points: { decrement: price } }
             });
 
-            // 3. Catat kepemilikan item (Mencegah duplikasi otomatis karena @@unique di schema)
+            // 4. Catat kepemilikan item
             await tx.userTrade.create({
                 data: { 
-                    userId: parseInt(userId), 
-                    tradeId: parseInt(tradeId) 
+                    userId: user.id, 
+                    tradeId: trade.id,
+                    isEquipped: false 
                 }
             });
         });
-        res.status(200).json({ success: true, message: "Purchase successful" });
+
+        res.status(200).json({ success: true, message: "Pembelian berhasil!" });
     } catch (error) {
-        console.error("Purchase Error:", error.message);
         res.status(400).json({ success: false, message: error.message });
     }
 };
