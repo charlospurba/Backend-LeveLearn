@@ -4,13 +4,11 @@ const prisma = new PrismaClient();
 
 async function resetAllPasswords() {
     try {
-        const defaultPassword = 'password'; // Password baru untuk SEMUA user
+        const defaultPassword = 'password'; 
         
-        // 1. Buat hash satu kali saja untuk dipakai semua user
         const hashedPassword = await bcrypt.hash(defaultPassword, 10);
         console.log("Hash baru berhasil dibuat. Memulai proses reset masal...");
 
-        // 2. Update SEMUA baris di tabel user menggunakan updateMany
         const result = await prisma.user.updateMany({
             data: { password: hashedPassword }
         });
@@ -20,7 +18,6 @@ async function resetAllPasswords() {
     } catch (error) {
         console.error("❌ Gagal mereset password:", error.message);
     } finally {
-        // Tutup koneksi database setelah selesai
         await prisma.$disconnect();
     }
 }

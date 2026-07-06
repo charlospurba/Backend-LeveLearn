@@ -7,7 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// --- MODEL USER ---
 model User {
   id           Int     @id @default(autoincrement())
   username     String  @unique
@@ -49,7 +48,6 @@ enum Role {
   ADMIN
 }
 
-// --- MODEL COURSE & CONTENT ---
 model Course {
   id          Int      @id @default(autoincrement())
   code        String
@@ -59,7 +57,6 @@ model Course {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // Relasi
   chapters    Chapter[]
   enrollments UserCourse[]
   badges      Badge[]
@@ -78,7 +75,6 @@ model UserCourse {
   timeFinished   DateTime @default(now())
   enrolledAt     DateTime @default(now())
 
-  // Relasi
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
@@ -98,7 +94,6 @@ model Chapter {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  // Relasi
   course       Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
   materials    Material[]
   assessments  Assessment[]
@@ -118,7 +113,6 @@ model Material {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relasi
   chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
   @@index([chapterId])
@@ -134,7 +128,6 @@ model Assessment {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // Relasi
   chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
   @@index([chapterId])
@@ -149,7 +142,6 @@ model Assignment {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // Relasi
   chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
   @@index([chapterId])
@@ -169,9 +161,8 @@ model UserChapter {
   assessmentAnswer   Json?
   assessmentGrade    Int      @default(0)
   
-  // HANYA ADA SATU BARIS SUBMISSION DI SINI
-  submission         String?  // URL terbaru
-  submissionHistory  Json?    // Array riwayat pengiriman
+  submission         String?  
+  submissionHistory  Json?    
   
   timeStarted        DateTime @default(now())
   timeFinished       DateTime @default(now())
@@ -182,7 +173,6 @@ model UserChapter {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  // Relasi
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
@@ -191,7 +181,6 @@ model UserChapter {
   @@map("user_chapters")
 }
 
-// --- MODEL GAMIFICATION (BADGES & TRADES) ---
 model Badge {
   id        Int       @id @default(autoincrement())
   name      String
@@ -202,7 +191,6 @@ model Badge {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  // Relasi
   course     Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
   chapter    Chapter     @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   userBadges UserBadge[]
@@ -223,10 +211,9 @@ model UserBadge {
   id          Int      @id @default(autoincrement())
   userId      Int
   badgeId     Int
-  isPurchased Boolean  @default(false) // Ditandai true jika sudah ditukar dengan item Trade
+  isPurchased Boolean  @default(false) 
   awardedAt   DateTime @default(now())
 
-  // Relasi
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
 
@@ -235,17 +222,14 @@ model UserBadge {
   @@map("user_badges")
 }
 
-// Model Trade digunakan sebagai Master Data Avatar & Reward
-// --- MODEL GAMIFICATION (BADGES & TRADES) ---
-
 model Trade {
   id                Int           @id @default(autoincrement())
   title             String
-  image             String        // URL Supabase
+  image             String        
   description       String        @db.Text
-  category          String        @default("REWARD") // "AVATAR", "REWARD", "FRAME"
-  requiredBadgeType BadgeType?    // Hanya untuk REWARD
-  priceInPoints     Int           @default(0)  // Harga dinamis dari Admin
+  category          String        @default("REWARD") 
+  requiredBadgeType BadgeType?    
+  priceInPoints     Int           @default(0)  
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
   userTrades        UserTrade[]
@@ -253,28 +237,22 @@ model Trade {
   @@map("trades")
 }
 
-// Model UserTrade mencatat kepemilikan item oleh user
 model UserTrade {
   id          Int      @id @default(autoincrement())
   userId      Int
   tradeId     Int
   
-  // Menandai apakah item ini sedang dipakai (khusus untuk FRAME atau AVATAR)
-  isEquipped  Boolean  @default(false) 
-  
+  isEquipped  Boolean  @default(false)  
   purchasedAt DateTime @default(now())
-
-  // Relasi
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   trade Trade @relation(fields: [tradeId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, tradeId]) // Mencegah user memiliki item yang sama dua kali
+  @@unique([userId, tradeId]) 
   @@index([userId])
   @@index([tradeId])
   @@map("user_trades")
 }
 
-// prisma/schema.prisma
 
 model Challenge {
   id          Int           @id @default(autoincrement())
@@ -282,13 +260,12 @@ model Challenge {
   description String
   goal        Int
   rewardPoint Int
-  type        ChallengeType // Ini merujuk ke enum di bawah
+  type        ChallengeType 
   createdAt   DateTime      @default(now())
 
   @@map("challenges")
 }
 
-// WAJIB ADA: Definisi tipe tantangan
 enum ChallengeType {
   DAILY_LOGIN
   COMPLETE_CHAPTER
@@ -313,8 +290,8 @@ model UserChallenge {
 model UserActivityLog {
   id        Int      @id @default(autoincrement())
   userId    Int
-  type      String // QUIZ_SCORE, COMPLETION, EXPLORATION, SESSION, ACCESS, REWARD, ANOMALY
-  value     Float // Nilai numerik log
+  type      String 
+  value     Float 
   createdAt DateTime @default(now())
   metadata  Json?
   user      User     @relation(fields: [userId], references: [id])
@@ -326,16 +303,13 @@ model UserActivityLog {
 model UserAdaptiveProfile {
   id             Int      @id @default(autoincrement())
   userId         Int      @unique
-  currentCluster String   // Achievers, Free Spirits, Players, Disruptors
-  confidence     Float    // Tingkat keyakinan model (0.0 - 1.0)
+  currentCluster String   
+  confidence     Float    
 
-  // --- KOLOM BARU: PEMETAAN INDEKS (0.0 - 1.0) ---
-  // Kolom ini akan terlihat di Prisma Studio sebagai angka desimal
-  achieverIndex   Float   @default(0) // Pemetaan Quiz & Progres
-  freeSpiritIndex Float   @default(0) // Pemetaan Eksplorasi & Durasi
-  playerIndex     Float   @default(0) // Pemetaan Akses & Reward
-  disruptorIndex  Float   @default(0) // Pemetaan Anomali
-  // -----------------------------------------------
+  achieverIndex   Float   @default(0) 
+  freeSpiritIndex Float   @default(0) 
+  playerIndex     Float   @default(0) 
+  disruptorIndex  Float   @default(0) 
 
   lastUpdated    DateTime @default(now()) @updatedAt
   user           User     @relation(fields: [userId], references: [id])
@@ -366,7 +340,7 @@ model Like {
   post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([postId, userId]) // Satu user hanya bisa like satu kali per post
+  @@unique([postId, userId]) 
 }
 
 model Comment {

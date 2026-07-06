@@ -5,10 +5,10 @@ exports.getAllPosts = async (currentUserId) => {
     return await prisma.post.findMany({
         orderBy: { createdAt: 'desc' },
         include: {
-            user: { // Identitas Pembuat Post
+            user: { 
                 select: { id: true, name: true, image: true }
             },
-            comments: { // Identitas Pemberi Komentar
+            comments: { 
                 include: { 
                     user: { select: { name: true, image: true } } // WAJIB ADA
                 },
@@ -68,21 +68,20 @@ exports.updatePost = async (postId, userId, content) => {
     return await prisma.post.updateMany({
         where: {
             id: parseInt(postId),
-            userId: parseInt(userId) // Keamanan: Pastikan user adalah pemiliknya
+            userId: parseInt(userId) 
         },
         data: {
             content: content,
-            updatedAt: new Date() // Pastikan field updatedAt diperbarui
+            updatedAt: new Date() 
         }
     });
 };
 
-// Hapus Postingan
 exports.deletePost = async (postId, userId) => {
     return await prisma.post.deleteMany({
         where: {
             id: parseInt(postId),
-            userId: parseInt(userId) // Keamanan: Pastikan user adalah pemiliknya
+            userId: parseInt(userId) 
         }
     });
 };

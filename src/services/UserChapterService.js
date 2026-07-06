@@ -57,8 +57,6 @@ exports.deleteUserChapter = async(id) => {
     }
 }
 
-// SPECIAL SERVICES
-
 exports.getUsersByCourse = async (courseId) => {
     try {
         const user = await prisma.userChapter.findMany({

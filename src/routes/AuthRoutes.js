@@ -8,10 +8,8 @@ const router = express.Router();
 router.post("/register", async (req, res) => {
   const { username, password, name } = req.body;
 
-  // encrypt the password
   const hashedPassword = bcrypt.hashSync(password, 8);
 
-  // save the new user and hashed password to the db
   try {
     const user = await prisma.user.create({
       data: {
@@ -28,9 +26,6 @@ router.post("/register", async (req, res) => {
       },
     });
 
-    // now that we have a user, I want to add their first course for them
-    // const defaultCourse = `Hello :) Add your first course!`
-
     // await prisma.course.create({
     //     data: {
     //         task: defaultCourse,
@@ -38,7 +33,6 @@ router.post("/register", async (req, res) => {
     //     }
     // })
 
-    // create a token using created user id
     const secret = process.env.JWT_SECRET || "dev-secret";
     const token = jwt.sign({ id: user.id }, secret, { expiresIn: "24h" });
     res.json({ token });
@@ -64,7 +58,6 @@ router.post("/login", async (req, res) => {
       return res.status(404).send({ message: "User not found" });
     }
 
-    // bcryptjs compareSync is synchronous; don't await it
     const passwordIsValid = bcrypt.compareSync(password, user.password);
 
     console.log("Password valid:", passwordIsValid);

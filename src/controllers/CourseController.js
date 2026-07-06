@@ -1,4 +1,3 @@
-// @ts-ignore
 const courseService = require('../services/CourseService');
 const userCourseService = require('../services/UserCourseService');
 const badgeService = require('../services/BadgeService');
@@ -69,8 +68,6 @@ const deleteCourse = async (req, res) => {
         console.log(error.message);
     }
 };
-
-// SPECIAL ROUTES
 
 const getChapterByCourse = async (req, res) => {
     const courseId = parseInt(req.params.id);

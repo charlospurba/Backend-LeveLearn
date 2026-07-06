@@ -23,7 +23,6 @@ exports.getTradeById = async (id) => {
 
 exports.createTrade = async (newData) => {
     try {
-        // PERBAIKAN: Jangan tentukan ID secara manual. Biarkan autoincrement.
         const { id, ...dataToSave } = newData;
 
         return await prisma.trade.create({

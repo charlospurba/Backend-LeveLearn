@@ -60,9 +60,6 @@ exports.deleteUserBadge = async(id) => {
     }
 }
 
-
-// SPECIAL SERVICES
-
 exports.getBadgesByUser = async (userId) => {
     try {
         const badge = await prisma.userBadge.findMany({

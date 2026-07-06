@@ -1,4 +1,3 @@
-// controllers/UserController.js
 const bcrypt = require('bcrypt');
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
@@ -62,14 +61,11 @@ const updateUser = async (req, res) => {
     const id = parseInt(req.params.id);
     const updateData = { ...req.body };
     try {
-        // === PERBAIKAN: Mencegah Double Hashing ===
         if (updateData.password && updateData.password.trim() !== "") {
             updateData.password = await bcrypt.hash(updateData.password, 10);
         } else {
-            // Jika kosong, hapus dari objek agar tidak menimpa password di database
             delete updateData.password;
         }
-        // ==========================================
 
         const updatedUser = await userService.updateUser(id, updateData);
         if (updateData.points !== undefined) {
@@ -78,7 +74,6 @@ const updateUser = async (req, res) => {
                 await userService.updateChallengeProgress(id, 'PERFECT_SCORE');
             }
             
-            // NON-BLOCKING: ML berjalan di background
             adaptiveService.updateAndPredictUserType(id).catch(err => 
                 console.error("ML Update Error (Background):", err.message)
             );
@@ -200,7 +195,6 @@ const claimChallengeReward = async (req, res) => {
     try {
         const result = await userService.claimReward(userId, userChallengeId);
         
-        // TRIGGER ADAPTIVE (Background)
         adaptiveService.updateAndPredictUserType(userId).catch(err => 
             console.error("ML Claim Prediction Error:", err.message)
         );
@@ -211,7 +205,6 @@ const claimChallengeReward = async (req, res) => {
     }
 };
 
-// ENDPOINT OPTIMIZED: Hanya membaca dari DB (Sangat Cepat)
 const getAdaptiveProfile = async (req, res) => {
     const userId = parseInt(req.params.id);
     try {
@@ -219,8 +212,6 @@ const getAdaptiveProfile = async (req, res) => {
             where: { userId: userId }
         });
         
-        // Jika data ada di DB, kirim data tersebut. 
-        // Jika belum ada (user baru), kirim default "Disruptors".
         if (profile) {
             return res.status(200).json(profile);
         } else {

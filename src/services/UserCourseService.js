@@ -57,8 +57,6 @@ exports.deleteUserCourse = async (id) => {
   }
 };
 
-// SPECIAL SERVICES
-
 exports.getUsersByCourse = async (courseId) => {
   try {
     const user = await prisma.userCourse.findMany({
@@ -106,16 +104,15 @@ exports.getCoursesByUser = async (userId) => {
       throw new Error(`No course found for user with id ${userId}`);
     }
 
-    // MODIFIKASI: Menambahkan pengecekan status penilaian tugas per kursus
     const result = await Promise.all(userCourses.map(async (userCourse) => {
       const ungradedCount = await prisma.userChapter.count({
         where: {
           userId: parseInt(userId),
           chapter: {
             courseId: userCourse.course.id,
-            assignments: { some: {} } // Hanya menghitung chapter yang memiliki assignment
+            assignments: { some: {} } 
           },
-          assignmentScore: 0 // Asumsi nilai 0 berarti instruktur belum memberikan penilaian
+          assignmentScore: 0 
         }
       });
 

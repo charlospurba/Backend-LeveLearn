@@ -69,9 +69,6 @@ const deleteChapter = async (req, res) => {
     }
 };
 
-
-// SPECIAL CONTROLLER
-
 const getMaterialsByChapter = async (req, res) => {
     const chapterId = parseInt(req.params.id);
 

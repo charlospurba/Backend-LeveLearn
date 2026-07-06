@@ -6,7 +6,6 @@ const userController = require('../controllers/UserController');
 router.post("/activity/log", activityController.postLog);
 router.get("/activity/vector/:id", activityController.getClassificationData);
 
-// Pastikan endpoint ini ada agar Flutter tidak "Failed to fetch"
 router.get("/user/adaptive/:id", userController.getAdaptiveProfile);
 
 module.exports = router;

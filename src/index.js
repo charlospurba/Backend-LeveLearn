@@ -38,8 +38,7 @@ app.use(express.json({
     },
 }));
 
-// 2. Akses File Statis (PENTING untuk Preview Gambar/PDF)
-// Jika upload ke public/uploads/documents, akses via http://localhost:7000/uploads/documents/...
+// 2. Akses File Statis 
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
@@ -56,7 +55,7 @@ app.use("/api", courseRoutes);
 app.use("/api", chapterRoutes);
 app.use("/api", materialRoutes);
 app.use("/api", assessmentRoutes);
-app.use("/api", assignmentRoutes); // Mount utama assignment
+app.use("/api", assignmentRoutes); 
 app.use("/api", userCourseRoutes);
 app.use("/api", userChapterRoutes);
 app.use("/api", badgeRoutes);
@@ -81,7 +80,7 @@ app.use((err, req, res, next) => {
     next(err);
 });
 
-// 6. Server Listening
+// 6. Server 
 const PORT = process.env.PORT || 7000;
 const HOST = process.env.HOST || "0.0.0.0";
 

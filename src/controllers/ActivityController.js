@@ -4,13 +4,10 @@ const adaptiveService = require("../services/AdaptiveService");
 
 const postLog = async (req, res) => {
     try {
-        // Gunakan destructuring agar data yang dikirim ke service benar
         const { userId, type, value, metadata } = req.body;
 
         const log = await activityService.recordLog(userId, type, value, metadata);
         
-        // Pemicu ML Service (Non-blocking)
-        // Sekarang adaptiveService sudah terdefinisi
         adaptiveService.updateAndPredictUserType(userId).catch(err => 
             console.error("ML Background Error:", err.message)
         );

@@ -60,29 +60,25 @@ const deleteTrade = async (req, res) => {
 };
 
 const buyShopItem = async (req, res) => {
-    const { userId, tradeId } = req.body; // Client hanya kirim ID
+    const { userId, tradeId } = req.body; 
     
     try {
         await prisma.$transaction(async (tx) => {
-            // 1. Ambil data trade dari DB untuk mendapatkan harga asli
             const trade = await tx.trade.findUnique({ where: { id: parseInt(tradeId) } });
             if (!trade) throw new Error("Item tidak ditemukan");
 
             const price = trade.priceInPoints;
             const user = await tx.user.findUnique({ where: { id: parseInt(userId) } });
 
-            // 2. Validasi saldo user
             if (!user || (user.points || 0) < price) {
                 throw new Error(`Poin tidak cukup. Butuh ${price} Poin.`);
             }
 
-            // 3. Potong poin user
             await tx.user.update({
                 where: { id: user.id },
                 data: { points: { decrement: price } }
             });
 
-            // 4. Catat kepemilikan item
             await tx.userTrade.create({
                 data: { 
                     userId: user.id, 
@@ -122,7 +118,6 @@ const equipFrame = async (req, res) => {
 
     try {
         await prisma.$transaction(async (tx) => {
-            // 1. Matikan semua frame yang aktif untuk user ini
             await tx.userTrade.updateMany({
                 where: { 
                     userId: uId, 
@@ -131,15 +126,12 @@ const equipFrame = async (req, res) => {
                 data: { isEquipped: false }
             });
 
-            // 2. Aktifkan frame yang dipilih
             await tx.userTrade.update({
                 where: { 
                     userId_tradeId: { userId: uId, tradeId: tId } 
                 },
                 data: { isEquipped: true }
             });
-
-            // CATATAN: Bagian update tx.user dihapus karena kolomnya tidak ada di database Anda
         });
 
         res.status(200).json({ success: true, message: "Berhasil dipasang di tabel relasi!" });

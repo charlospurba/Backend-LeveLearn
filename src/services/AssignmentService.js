@@ -55,23 +55,17 @@ exports.deleteAssignment = async(id) => {
     }
 };
 
-/**
- * Fungsi Submit Assignment yang diperbaiki untuk membuka Chapter selanjutnya.
- * Sangat krusial untuk profil Disruptors agar alur belajar tidak terhenti.
- */
 exports.submitAssignment = async (statusId, newFileUrl) => {
     try {
-        // 1. Ambil data UserChapter untuk mendapatkan userId, courseId, dan level saat ini
         const current = await prisma.userChapter.findUnique({
             where: { id: statusId },
             include: { 
-                chapter: true // Digunakan untuk mendapatkan courseId dan level chapter tersebut
+                chapter: true 
             }
         });
 
         if (!current) throw new Error("Status chapter tidak ditemukan");
 
-        // 2. Olah riwayat pengiriman (Submission History)
         let history = [];
         if (current.submissionHistory) {
             if (typeof current.submissionHistory === 'string') {
@@ -84,14 +78,10 @@ exports.submitAssignment = async (statusId, newFileUrl) => {
                 history = current.submissionHistory;
             }
         }
-
-        // Masukkan data baru ke urutan teratas
         history.unshift(newFileUrl);
 
-        // 3. TRANSACTION: Menjamin atomisitas (kedua tabel harus sukses update bersamaan)
         return await prisma.$transaction(async (tx) => {
             
-            // A. Update status chapter spesifik user
             const updatedUserChapter = await tx.userChapter.update({
                 where: { id: statusId },
                 data: {
@@ -103,7 +93,6 @@ exports.submitAssignment = async (statusId, newFileUrl) => {
                 },
             });
 
-            // B. Cari data progres kursus (UserCourse)
             const userCourse = await tx.userCourse.findUnique({
                 where: {
                     userId_courseId: {
@@ -113,15 +102,11 @@ exports.submitAssignment = async (statusId, newFileUrl) => {
                 }
             });
 
-            // C. LOGIKA PEMBUKAAN LEVEL: 
-            // Update currentChapter hanya jika chapter yang baru diselesaikan 
-            // setara dengan currentChapter yang sedang aktif.
             if (userCourse && current.chapter.level === userCourse.currentChapter) {
                 await tx.userCourse.update({
                     where: { id: userCourse.id },
                     data: {
                         currentChapter: { increment: 1 },
-                        // Update progres (persentase) bisa disesuaikan dengan total chapter
                         progress: Math.min(Math.round((current.chapter.level / 10) * 100), 100) 
                     },
                 });

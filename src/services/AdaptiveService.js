@@ -1,4 +1,3 @@
-// services/AdaptiveService.js
 const axios = require('axios');
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
@@ -27,7 +26,6 @@ class AdaptiveService {
 
       const currentProfile = await prisma.userAdaptiveProfile.findUnique({ where: { userId: id } });
 
-      // STABILISASI: Hanya ganti klaster jika confidence > 0.85
       if (confidence > 0.85 || (currentProfile && currentProfile.currentCluster === cluster)) {
         await this.saveProfile(id, cluster, confidence, vector);
         console.log(`[ML-SYNC] User ${id} updated to: ${cluster} (${(confidence * 100).toFixed(1)}%)`);
@@ -37,14 +35,12 @@ class AdaptiveService {
     }
   }
 
-  // MODIFIKASI: Sekarang menerima vector untuk disimpan ke Prisma Studio
   async saveProfile(userId, cluster, confidence, vector) {
     await prisma.userAdaptiveProfile.upsert({
       where: { userId },
       update: { 
         currentCluster: cluster, 
         confidence, 
-        // Menyimpan angka indeks desimal agar terlihat di database
         achieverIndex: vector[0],
         freeSpiritIndex: vector[1],
         playerIndex: vector[2],

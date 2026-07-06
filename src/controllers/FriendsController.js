@@ -2,7 +2,6 @@ const friendsService = require("../services/FriendsService");
 
 const getPosts = async (req, res) => {
     try {
-        // currentUserId dikirim dari Flutter via query params (?currentUserId=5)
         const { currentUserId } = req.query; 
         const posts = await friendsService.getAllPosts(currentUserId);
         res.status(200).json(posts);
@@ -13,14 +12,12 @@ const getPosts = async (req, res) => {
 
 const createPost = async (req, res) => {
     try {
-        // Data ini dikirim dari Flutter dalam format JSON
         const { userId, content, link, fileUrl, fileName } = req.body;
 
         if (!userId) {
             return res.status(400).json({ message: "User ID diperlukan" });
         }
 
-        // Validasi: Minimal harus ada konten teks atau file
         if (!content && !fileUrl) {
             return res.status(400).json({ message: "Postingan tidak boleh kosong" });
         }
@@ -61,8 +58,8 @@ const handleComment = async (req, res) => {
 
 const updatePost = async (req, res) => {
     try {
-        const { id } = req.params; // ID Post dari URL
-        const { userId, content } = req.body; // userId dan konten baru dari Body
+        const { id } = req.params; 
+        const { userId, content } = req.body; 
 
         const result = await friendsService.updatePost(id, userId, content);
         
@@ -78,8 +75,8 @@ const updatePost = async (req, res) => {
 
 const deletePost = async (req, res) => {
     try {
-        const { id } = req.params; // ID Post dari URL
-        const { userId } = req.body; // userId pengirim
+        const { id } = req.params; 
+        const { userId } = req.body; 
 
         const result = await friendsService.deletePost(id, userId);
 

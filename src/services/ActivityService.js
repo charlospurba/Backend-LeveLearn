@@ -18,7 +18,6 @@ async recordLog(userId, type, value, metadata = {}) {
     }
   }
 
-  // Fungsi pembantu untuk mengambil rangkuman log (berguna untuk ML nantinya)
   async getUserStatsForML(userId) {
     return await prisma.userActivityLog.findMany({
       where: { userId: parseInt(userId) },

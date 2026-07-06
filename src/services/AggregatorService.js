@@ -1,4 +1,3 @@
-// services/AggregatorService.js
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
@@ -9,7 +8,6 @@ class AggregatorService {
       select: { type: true, value: true }
     });
 
-    // Jika tidak ada data, kembalikan vektor nol
     if (logs.length === 0) return [0, 0, 0, 0];
 
     // --- ACHIEVERS (Threshold: 100 Chapter) ---
@@ -41,7 +39,6 @@ class AggregatorService {
     const anomalyLogs = logs.filter(l => l.type === 'ANOMALY_PATTERNS');
     const x4 = Math.min(anomalyLogs.length / 50, 1.0);
 
-    // Mengembalikan array float dengan presisi 3 desimal
     return [x1, x2, x3, x4].map(v => parseFloat(Math.min(v, 1.0).toFixed(3)));
   }
 }

@@ -1,15 +1,12 @@
-// services/UserService.js
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
-// --- FUNGSI USER MANAGEMENT ---
 exports.getAllUsers = async (role) => {
     try {
         const users = await prisma.user.findMany({
             where: role ? { role: role.toUpperCase() } : {},
         });
         
-        // Menghapus password dari hasil query
         return users.map(user => {
             delete user.password;
             return user;
@@ -20,14 +17,13 @@ exports.getAllUsers = async (role) => {
 };
 
 exports.getUserById = async (id) => {
-    // 1. Ambil data user beserta relasi userTrades yang sedang dipasang (isEquipped)
     const user = await prisma.user.findUnique({ 
         where: { id: parseInt(id) },
         include: {
             userTrades: {
                 where: { 
                     isEquipped: true,
-                    trade: { category: "FRAME" } // Hanya ambil yang kategori FRAME
+                    trade: { category: "FRAME" } 
                 }
             }
         }
@@ -35,18 +31,14 @@ exports.getUserById = async (id) => {
 
     if (!user) return null;
 
-    // 2. "Menyuntikkan" field equippedFrameId secara dinamis
-    // Jika ada bingkai yang aktif di tabel UserTrade, ambil tradeId-nya
     if (user.userTrades && user.userTrades.length > 0) {
         user.equippedFrameId = user.userTrades[0].tradeId;
     } else {
         user.equippedFrameId = null;
     }
 
-    // 3. Hapus array userTrades dan password agar response JSON tetap bersih dan aman
     delete user.userTrades;
-    delete user.password; // <-- Mencegah Double Hashing
-
+    delete user.password; 
     return user;
 };
 
@@ -66,7 +58,7 @@ exports.createUser = async (name, username, password, role, studentId, points, t
         },
     });
 
-    delete newUser.password; // Mencegah password bocor
+    delete newUser.password; 
     return newUser;
 };
 
@@ -78,7 +70,6 @@ exports.updateUser = async (id, updateData) => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     
-    // LOGIKA STREAK OTOMATIS
     if (updateData.materialDone === true || updateData.points !== undefined) {
         let lastDate = currentUser.lastInteraction ? new Date(currentUser.lastInteraction) : null;
         let lastDateNormalized = lastDate ? new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate()) : null;
@@ -97,21 +88,19 @@ exports.updateUser = async (id, updateData) => {
         }
     }
 
-    // === PERBAIKAN: CLEANUP UPDATE DATA ===
-    delete updateData.id;                 // ID tidak boleh di-update
-    delete updateData.equippedFrameId;    // BUKAN kolom tabel User
-    delete updateData.materialDone;       // Hanya parameter trigger untuk logika streak
-    delete updateData.createdAt;          // Tanggal dibuat tidak boleh diubah
+    delete updateData.id;                 
+    delete updateData.equippedFrameId;    
+    delete updateData.materialDone;      
+    delete updateData.createdAt;          
     
     updateData.updatedAt = now;
-    // ======================================
 
     const updatedUser = await prisma.user.update({
         where: { id: userId },
         data: updateData,
     });
 
-    delete updatedUser.password; // Mencegah password bocor setelah update
+    delete updatedUser.password;
     return updatedUser;
 };
 
@@ -120,7 +109,6 @@ exports.deleteUser = async (id) => {
     return `Success deleting user with id ${id}`;
 };
 
-// --- FUNGSI CHALLENGE & POIN ---
 exports.updateChallengeProgress = async (userId, type) => {
     try {
         const userIdInt = parseInt(userId);
@@ -187,7 +175,7 @@ exports.claimReward = async (userId, userChallengeId) => {
             data: { points: { increment: rewardValue } }
         });
 
-        delete updatedUser.password; // Mencegah password bocor
+        delete updatedUser.password; 
         return updatedUser;
     });
 };
@@ -221,7 +209,7 @@ exports.addPurchasedAvatar = async (userId, tradeId, price) => {
             data: { points: currentPoints - price },
         });
 
-        delete updatedUser.password; // Mencegah password bocor
+        delete updatedUser.password; 
         return { trade: newTrade, user: updatedUser };
     });
 };

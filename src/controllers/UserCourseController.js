@@ -68,9 +68,6 @@ const deleteUserCourse = async (req, res) => {
     }
 };
 
-
-// SPECIAL CONTROLLER
-
 const getUserCourseByUserByCourse = async (req, res) => {
     const userId = parseInt(req.params.userId);
     const courseId = parseInt(req.params.courseId);

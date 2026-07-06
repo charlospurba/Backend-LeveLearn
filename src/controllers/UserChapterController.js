@@ -81,9 +81,6 @@ const deleteUserChapter = async (req, res) => {
     }
 };
 
-
-// SPECIAL CONTROLLER
-
 const getUserChapterByUserByChapter = async (req, res) => {
     const userId = parseInt(req.params.userId);
     const chapterId = parseInt(req.params.chapterId);
